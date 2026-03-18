@@ -12,9 +12,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateAlbumPhotoDto } from './dto/create-album-photo.dto';
 import { UpdateAlbumPhotoDto } from './dto/update-album-photo.dto';
 import { AlbumsPhotosService } from './albums-photos.service';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
+import { AuthRequiredGuard } from '../../../common/guards/auth-required.guard';
+import { HotelRequiredGuard } from '../../../common/guards/hotel-required.guard';
+import { HotelUuid } from '../../../common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Albums')
 @ApiBearerAuth()

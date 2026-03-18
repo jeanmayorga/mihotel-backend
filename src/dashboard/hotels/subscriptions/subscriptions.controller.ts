@@ -3,9 +3,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { SubscriptionsService } from './subscriptions.service';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
+import { HotelRequiredGuard } from '../../../common/guards/hotel-required.guard';
+import { AuthRequiredGuard } from '../../../common/guards/auth-required.guard';
+import { HotelUuid } from '../../../common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Subscriptions')
 @ApiBearerAuth()

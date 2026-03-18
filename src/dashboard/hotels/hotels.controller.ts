@@ -1,10 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { HotelsService } from './hotels.service';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
+import { AuthRequiredGuard } from '../../common/guards/auth-required.guard';
+import { AuthUserUuid } from '../../common/decorators/auth-user-uuid.decorator';
+import { HotelRequiredGuard } from '../../common/guards/hotel-required.guard';
+import { HotelUuid } from '../../common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Hotels')
 @ApiBearerAuth()
