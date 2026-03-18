@@ -9,7 +9,10 @@ export class BillingController {
 
   @Post('billing')
   async processMonthlyBilling(@Headers('authorization') authorization: string) {
-    if (authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (
+      !process.env.CRON_SECRET ||
+      authorization !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
       throw new ForbiddenException('Invalid cron secret');
     }
 
