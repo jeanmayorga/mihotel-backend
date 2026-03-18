@@ -33,20 +33,16 @@ export class SubscriptionsController {
     return this.subscriptionsService.create(hotelUuid, dto);
   }
 
-  @Patch(':uuid')
+  @Patch()
   changePlan(
     @Param('hotelUuid') hotelUuid: string,
-    @Param('uuid') uuid: string,
     @Body() dto: UpdateSubscriptionDto,
   ) {
-    return this.subscriptionsService.changePlan(hotelUuid, uuid, dto);
+    return this.subscriptionsService.changePlan(hotelUuid, dto);
   }
 
-  @Get(':uuid/invoices')
-  findInvoices(
-    @Param('hotelUuid') hotelUuid: string,
-    @Param('uuid') uuid: string,
-  ) {
-    return this.subscriptionsService.findInvoices(hotelUuid, uuid);
+  @Get('invoices')
+  findInvoices(@Param('hotelUuid') hotelUuid: string) {
+    return this.subscriptionsService.findInvoices(hotelUuid);
   }
 }

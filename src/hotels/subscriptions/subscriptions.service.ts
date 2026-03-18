@@ -53,19 +53,17 @@ export class SubscriptionsService {
     });
   }
 
-  async changePlan(
-    hotelUuid: string,
-    uuid: string,
-    dto: UpdateSubscriptionDto,
-  ) {
-    this.logger.log(`Changing plan for subscription ${uuid}`);
+  async changePlan(hotelUuid: string, dto: UpdateSubscriptionDto) {
+    this.logger.log(`Changing plan for hotel ${hotelUuid}`);
 
     const subscription = await this.prisma.hotels_subscriptions.findFirst({
-      where: { uuid, hotel_uuid: hotelUuid },
+      where: { hotel_uuid: hotelUuid, status: 'active' },
     });
 
     if (!subscription) {
-      throw new NotFoundException(`Subscription ${uuid} not found`);
+      throw new NotFoundException(
+        `No active subscription found for hotel ${hotelUuid}`,
+      );
     }
 
     const plan = await this.prisma.hotels_plans.findUnique({
@@ -82,7 +80,7 @@ export class SubscriptionsService {
         : null;
 
     return this.prisma.hotels_subscriptions.update({
-      where: { uuid },
+      where: { uuid: subscription.uuid },
       data: {
         plan_uuid: dto.plan_uuid,
         next_billing_at: nextBillingAt,
@@ -91,19 +89,21 @@ export class SubscriptionsService {
     });
   }
 
-  async findInvoices(hotelUuid: string, subscriptionUuid: string) {
-    this.logger.log(`Fetching invoices for subscription ${subscriptionUuid}`);
+  async findInvoices(hotelUuid: string) {
+    this.logger.log(`Fetching invoices for hotel ${hotelUuid}`);
 
     const subscription = await this.prisma.hotels_subscriptions.findFirst({
-      where: { uuid: subscriptionUuid, hotel_uuid: hotelUuid },
+      where: { hotel_uuid: hotelUuid, status: 'active' },
     });
 
     if (!subscription) {
-      throw new NotFoundException(`Subscription ${subscriptionUuid} not found`);
+      throw new NotFoundException(
+        `No active subscription found for hotel ${hotelUuid}`,
+      );
     }
 
     return this.prisma.hotels_subscription_invoices.findMany({
-      where: { subscription_uuid: subscriptionUuid },
+      where: { subscription_uuid: subscription.uuid },
       orderBy: { created_at: 'desc' },
     });
   }
