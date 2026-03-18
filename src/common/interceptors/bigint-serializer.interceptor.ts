@@ -10,6 +10,7 @@ import { map } from 'rxjs/operators';
 function replaceBigInt(value: unknown): unknown {
   if (typeof value === 'bigint') return Number(value);
   if (Array.isArray(value)) return value.map(replaceBigInt);
+  if (value instanceof Date) return value;
   if (value !== null && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value).map(([k, v]) => [k, replaceBigInt(v)]),
