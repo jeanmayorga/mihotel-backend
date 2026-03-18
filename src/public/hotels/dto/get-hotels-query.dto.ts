@@ -9,7 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { parseStrictBooleanQueryParam } from '../../common/helpers/parse-strict-boolean-query-param';
+import { parseStrictBooleanQueryParam } from '../../../common/helpers/parse-strict-boolean-query-param';
 
 export class GetHotelsQueryDto {
   @ApiPropertyOptional({ example: 1, minimum: 1 })

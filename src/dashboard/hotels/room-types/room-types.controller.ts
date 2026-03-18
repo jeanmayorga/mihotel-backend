@@ -9,39 +9,38 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { HotelAccessGuard } from '../../../common/guards/hotel-access.guard';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
 import { RoomTypesService } from './room-types.service';
+import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
+import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Room Types')
 @ApiBearerAuth()
-@UseGuards(HotelAccessGuard)
+@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/rooms/:roomUuid/types')
 export class RoomTypesController {
   constructor(private readonly roomTypesService: RoomTypesService) {}
 
   @Post()
-  create(
-    @Param('hotelUuid') hotelUuid: string,
-    @Body() dto: CreateRoomTypeDto,
-  ) {
+  create(@HotelUuid() hotelUuid: string, @Body() dto: CreateRoomTypeDto) {
     return this.roomTypesService.create(hotelUuid, dto);
   }
 
   @Get()
-  findAll(@Param('hotelUuid') hotelUuid: string) {
+  findAll(@HotelUuid() hotelUuid: string) {
     return this.roomTypesService.findAll(hotelUuid);
   }
 
   @Get(':uuid')
-  findOne(@Param('hotelUuid') hotelUuid: string, @Param('uuid') uuid: string) {
+  findOne(@HotelUuid() hotelUuid: string, @Param('uuid') uuid: string) {
     return this.roomTypesService.findOne(hotelUuid, uuid);
   }
 
   @Patch(':uuid')
   update(
-    @Param('hotelUuid') hotelUuid: string,
+    @HotelUuid() hotelUuid: string,
     @Param('uuid') uuid: string,
     @Body() dto: UpdateRoomTypeDto,
   ) {
@@ -49,7 +48,7 @@ export class RoomTypesController {
   }
 
   @Delete(':uuid')
-  remove(@Param('hotelUuid') hotelUuid: string, @Param('uuid') uuid: string) {
+  remove(@HotelUuid() hotelUuid: string, @Param('uuid') uuid: string) {
     return this.roomTypesService.remove(hotelUuid, uuid);
   }
 }

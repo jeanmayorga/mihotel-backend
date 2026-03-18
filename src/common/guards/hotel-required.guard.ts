@@ -4,32 +4,43 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { isUUID } from 'class-validator';
 import { UserHotelsService } from '../../dashboard/hotels/user_hotels/user_hotels.service';
 
 @Injectable()
-export class HotelAccessGuard implements CanActivate {
+export class HotelRequiredGuard implements CanActivate {
+  private readonly logger = new Logger(HotelRequiredGuard.name);
   constructor(private readonly userHotelsService: UserHotelsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
-      .getRequest<Request & { authUserUuid?: string }>();
+      .getRequest<Request & { authUserUuid?: string; hotelUuid?: string }>();
 
     const authUserUuid = request.authUserUuid as string;
     const hotelUuid = request.params.hotelUuid as string;
 
-    console.log({ authUserUuid, hotelUuid });
+    if (!authUserUuid) {
+      throw new UnauthorizedException('Invalid user uuid');
+    }
 
     if (!isUUID(hotelUuid)) {
-      throw new BadRequestException('hotelUuid must be a valid UUID');
+      throw new BadRequestException('Invalid hotel uuid');
     }
 
     const hasAccess = await this.userHotelsService.hasAccessToHotel(
       authUserUuid,
       hotelUuid,
+    );
+
+    request.hotelUuid = hotelUuid;
+
+    this.logger.log(
+      `hasAccess: ${hasAccess}, authUserUuid: ${authUserUuid}, hotelUuid: ${hotelUuid}`,
     );
 
     if (!hasAccess) {

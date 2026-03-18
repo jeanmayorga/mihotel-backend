@@ -1,12 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Public } from '../common/decorators/public.decorator';
 import { HotelsService } from './hotels.service';
 import { GetHotelsQueryDto } from './dto/get-hotels-query.dto';
 
-@ApiTags('Hotels')
-@Public()
-@Controller('hotels')
+@ApiTags('Public')
+@Controller('public/hotels')
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 

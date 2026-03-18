@@ -29,7 +29,7 @@ export class RoomsService {
     sortBy: FilterRoomsDto['sortBy'] = 'created_at',
     sortOrder: FilterRoomsDto['sortOrder'] = 'desc',
   ) {
-    this.logger.log(`Fetching rooms for hotel ${hotelUuid}`);
+    this.logger.log(`rooms-service -> findAll -> hotelUuid: ${hotelUuid}`);
     return this.prisma.hotels_rooms.findMany({
       where: { hotel_uuid: hotelUuid },
       include: {
@@ -45,7 +45,9 @@ export class RoomsService {
   }
 
   async findOne(hotelUuid: string, uuid: string) {
-    this.logger.log(`Fetching room ${uuid} for hotel ${hotelUuid}`);
+    this.logger.log(
+      `rooms-service -> findOne -> hotelUuid: ${hotelUuid}, uuid: ${uuid}`,
+    );
     const room = await this.prisma.hotels_rooms.findFirst({
       where: { uuid, hotel_uuid: hotelUuid },
       include: {

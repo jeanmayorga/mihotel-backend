@@ -8,11 +8,10 @@ import {
 import { Reflector } from '@nestjs/core';
 import { createClient } from '@supabase/supabase-js';
 import type { Request } from 'express';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
-export class MeAccessGuard implements CanActivate {
-  private readonly logger = new Logger(MeAccessGuard.name);
+export class AuthRequiredGuard implements CanActivate {
+  private readonly logger = new Logger(AuthRequiredGuard.name);
   private supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_ANON_KEY!,
@@ -21,13 +20,6 @@ export class MeAccessGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (isPublic) return true;
-
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractToken(request);
 
@@ -46,8 +38,9 @@ export class MeAccessGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token');
       }
 
-      this.logger.log(`User ${user.id} authenticated`);
-      request.authUserUuid = user.id;
+      this.logger.log(`user auth id: ${user.id}`);
+      const authUserUuid = user.id;
+      request.authUserUuid = authUserUuid;
 
       return true;
     } catch {

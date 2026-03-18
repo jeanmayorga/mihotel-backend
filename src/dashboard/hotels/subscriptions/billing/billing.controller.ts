@@ -1,8 +1,8 @@
 import { Controller, ForbiddenException, Headers, Post } from '@nestjs/common';
-import { ApiExcludeController } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
 
-@ApiExcludeController()
+@ApiTags('Dashboard / Subscriptions')
 @Controller('cron')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}

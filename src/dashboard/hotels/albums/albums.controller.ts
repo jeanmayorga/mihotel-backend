@@ -9,36 +9,38 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { HotelAccessGuard } from '../../../common/guards/hotel-access.guard';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { AlbumsService } from './albums.service';
+import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
+import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Albums')
 @ApiBearerAuth()
-@UseGuards(HotelAccessGuard)
+@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/albums')
 export class AlbumsController {
   constructor(private readonly albumsService: AlbumsService) {}
 
   @Post()
-  create(@Param('hotelUuid') hotelUuid: string, @Body() dto: CreateAlbumDto) {
+  create(@HotelUuid() hotelUuid: string, @Body() dto: CreateAlbumDto) {
     return this.albumsService.create(hotelUuid, dto);
   }
 
   @Get()
-  findAll(@Param('hotelUuid') hotelUuid: string) {
+  findAll(@HotelUuid() hotelUuid: string) {
     return this.albumsService.findAll(hotelUuid);
   }
 
   @Get(':uuid')
-  findOne(@Param('hotelUuid') hotelUuid: string, @Param('uuid') uuid: string) {
+  findOne(@HotelUuid() hotelUuid: string, @Param('uuid') uuid: string) {
     return this.albumsService.findOne(hotelUuid, uuid);
   }
 
   @Patch(':uuid')
   update(
-    @Param('hotelUuid') hotelUuid: string,
+    @HotelUuid() hotelUuid: string,
     @Param('uuid') uuid: string,
     @Body() dto: UpdateAlbumDto,
   ) {
@@ -46,7 +48,7 @@ export class AlbumsController {
   }
 
   @Delete(':uuid')
-  remove(@Param('hotelUuid') hotelUuid: string, @Param('uuid') uuid: string) {
+  remove(@HotelUuid() hotelUuid: string, @Param('uuid') uuid: string) {
     return this.albumsService.remove(hotelUuid, uuid);
   }
 }

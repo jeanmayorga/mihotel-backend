@@ -8,9 +8,6 @@ export class UserHotelsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async hasAccessToHotel(userUuid: string, hotelUuid: string) {
-    this.logger.log(
-      `Checking if user ${userUuid} has access to hotel ${hotelUuid}`,
-    );
     const userHotel = await this.prisma.users_hotels.findFirst({
       where: { user_uuid: userUuid, hotel_uuid: hotelUuid },
     });

@@ -7,4 +7,4 @@ import { HotelsService } from './hotels.service';
   controllers: [HotelsController],
   providers: [HotelsService],
 })
-export class HotelsModule {}
+export class PublicHotelsModule {}
