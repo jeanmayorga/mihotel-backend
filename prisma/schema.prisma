@@ -1,0 +1,1278 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["multiSchema", "partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["auth", "public"]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model flow_state {
+  id                     String                 @id @db.Uuid
+  user_id                String?                @db.Uuid
+  auth_code              String?
+  code_challenge_method  code_challenge_method?
+  code_challenge         String?
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?              @db.Timestamptz(6)
+  updated_at             DateTime?              @db.Timestamptz(6)
+  authentication_method  String
+  auth_code_issued_at    DateTime?              @db.Timestamptz(6)
+  invite_token           String?
+  referrer               String?
+  oauth_client_state_id  String?                @db.Uuid
+  linking_target_id      String?                @db.Uuid
+  email_optional         Boolean                @default(false)
+  saml_relay_states      saml_relay_states[]
+
+  @@index([created_at(sort: Desc)])
+  @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model identities {
+  provider_id     String
+  user_id         String     @db.Uuid
+  identity_data   Json
+  provider        String
+  last_sign_in_at DateTime?  @db.Timestamptz(6)
+  created_at      DateTime?  @db.Timestamptz(6)
+  updated_at      DateTime?  @db.Timestamptz(6)
+  email           String?    @default(dbgenerated("lower((identity_data ->> 'email'::text))"))
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  users           auth_users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider_id, provider], map: "identities_provider_id_provider_unique")
+  @@index([email])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model instances {
+  id              String    @id @db.Uuid
+  uuid            String?   @db.Uuid
+  raw_base_config String?
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mfa_amr_claims {
+  session_id            String   @db.Uuid
+  created_at            DateTime @db.Timestamptz(6)
+  updated_at            DateTime @db.Timestamptz(6)
+  authentication_method String
+  id                    String   @id(map: "amr_id_pk") @db.Uuid
+  sessions              sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([session_id, authentication_method], map: "mfa_amr_claims_session_id_authentication_method_pkey")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mfa_challenges {
+  id                     String      @id @db.Uuid
+  factor_id              String      @db.Uuid
+  created_at             DateTime    @db.Timestamptz(6)
+  verified_at            DateTime?   @db.Timestamptz(6)
+  ip_address             String      @db.Inet
+  otp_code               String?
+  web_authn_session_data Json?
+  mfa_factors            mfa_factors @relation(fields: [factor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "mfa_challenges_auth_factor_id_fkey")
+
+  @@index([created_at(sort: Desc)], map: "mfa_challenge_created_at_idx")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mfa_factors {
+  id                           String           @id @db.Uuid
+  user_id                      String           @db.Uuid
+  friendly_name                String?
+  factor_type                  factor_type
+  status                       factor_status
+  created_at                   DateTime         @db.Timestamptz(6)
+  updated_at                   DateTime         @db.Timestamptz(6)
+  secret                       String?
+  phone                        String?
+  last_challenged_at           DateTime?        @unique @db.Timestamptz(6)
+  web_authn_credential         Json?
+  web_authn_aaguid             String?          @db.Uuid
+  last_webauthn_challenge_data Json?
+  mfa_challenges               mfa_challenges[]
+  users                        auth_users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([friendly_name, user_id], map: "mfa_factors_user_friendly_name_unique", where: raw("(TRIM(BOTH FROM friendly_name) <> ''::text)"))
+  @@unique([user_id, phone], map: "unique_phone_factor_per_user")
+  @@index([user_id, created_at], map: "factor_id_created_at_idx")
+  @@index([user_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_authorizations {
+  id                    String                     @id @db.Uuid
+  authorization_id      String                     @unique
+  client_id             String                     @db.Uuid
+  user_id               String?                    @db.Uuid
+  redirect_uri          String
+  scope                 String
+  state                 String?
+  resource              String?
+  code_challenge        String?
+  code_challenge_method code_challenge_method?
+  response_type         oauth_response_type        @default(code)
+  status                oauth_authorization_status @default(pending)
+  authorization_code    String?                    @unique
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  expires_at            DateTime                   @default(dbgenerated("(now() + '00:03:00'::interval)")) @db.Timestamptz(6)
+  approved_at           DateTime?                  @db.Timestamptz(6)
+  nonce                 String?
+  oauth_clients         oauth_clients              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                 auth_users?                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at], map: "oauth_auth_pending_exp_idx", where: raw("(status = 'pending'::auth.oauth_authorization_status)"))
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model oauth_client_states {
+  id            String   @id @db.Uuid
+  provider_type String
+  code_verifier String?
+  created_at    DateTime @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_oauth_client_states_created_at")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_clients {
+  id                         String                  @id @db.Uuid
+  client_secret_hash         String?
+  registration_type          oauth_registration_type
+  redirect_uris              String
+  grant_types                String
+  client_name                String?
+  client_uri                 String?
+  logo_uri                   String?
+  created_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at                 DateTime?               @db.Timestamptz(6)
+  client_type                oauth_client_type       @default(confidential)
+  token_endpoint_auth_method String
+  oauth_authorizations       oauth_authorizations[]
+  oauth_consents             oauth_consents[]
+  sessions                   sessions[]
+
+  @@index([deleted_at])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_consents {
+  id            String        @id @db.Uuid
+  user_id       String        @db.Uuid
+  client_id     String        @db.Uuid
+  scopes        String
+  granted_at    DateTime      @default(now()) @db.Timestamptz(6)
+  revoked_at    DateTime?     @db.Timestamptz(6)
+  oauth_clients oauth_clients @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         auth_users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, client_id], map: "oauth_consents_user_client_unique")
+  @@index([client_id], map: "oauth_consents_active_client_idx", where: raw("(revoked_at IS NULL)"))
+  @@index([user_id, client_id], map: "oauth_consents_active_user_client_idx", where: raw("(revoked_at IS NULL)"))
+  @@index([user_id, granted_at(sort: Desc)], map: "oauth_consents_user_order_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model one_time_tokens {
+  id         String              @id @db.Uuid
+  user_id    String              @db.Uuid
+  token_type one_time_token_type
+  token_hash String
+  relates_to String
+  created_at DateTime            @default(now()) @db.Timestamp(6)
+  updated_at DateTime            @default(now()) @db.Timestamp(6)
+  users      auth_users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, token_type])
+  @@index([relates_to], map: "one_time_tokens_relates_to_hash_idx", type: Hash)
+  @@index([token_hash], map: "one_time_tokens_token_hash_hash_idx", type: Hash)
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model refresh_tokens {
+  instance_id String?   @db.Uuid
+  id          BigInt    @id @default(autoincrement())
+  token       String?   @unique(map: "refresh_tokens_token_unique") @db.VarChar(255)
+  user_id     String?   @db.VarChar(255)
+  revoked     Boolean?
+  created_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+  parent      String?   @db.VarChar(255)
+  session_id  String?   @db.Uuid
+  sessions    sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([session_id], map: "refresh_token_session_id")
+  @@index([instance_id])
+  @@index([instance_id, user_id])
+  @@index([parent])
+  @@index([session_id, revoked])
+  @@index([updated_at(sort: Desc)])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model saml_providers {
+  id                String        @id @db.Uuid
+  sso_provider_id   String        @db.Uuid
+  entity_id         String        @unique
+  metadata_xml      String
+  metadata_url      String?
+  attribute_mapping Json?
+  created_at        DateTime?     @db.Timestamptz(6)
+  updated_at        DateTime?     @db.Timestamptz(6)
+  name_id_format    String?
+  sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model saml_relay_states {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  request_id      String
+  for_email       String?
+  redirect_to     String?
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  flow_state_id   String?       @db.Uuid
+  flow_state      flow_state?   @relation(fields: [flow_state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([for_email])
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model schema_migrations {
+  version String @id @db.VarChar(255)
+
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sessions {
+  id                     String           @id @db.Uuid
+  user_id                String           @db.Uuid
+  created_at             DateTime?        @db.Timestamptz(6)
+  updated_at             DateTime?        @db.Timestamptz(6)
+  factor_id              String?          @db.Uuid
+  aal                    aal_level?
+  not_after              DateTime?        @db.Timestamptz(6)
+  refreshed_at           DateTime?        @db.Timestamp(6)
+  user_agent             String?
+  ip                     String?          @db.Inet
+  tag                    String?
+  oauth_client_id        String?          @db.Uuid
+  refresh_token_hmac_key String?
+  refresh_token_counter  BigInt?
+  scopes                 String?
+  mfa_amr_claims         mfa_amr_claims[]
+  refresh_tokens         refresh_tokens[]
+  oauth_clients          oauth_clients?   @relation(fields: [oauth_client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                  auth_users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([not_after(sort: Desc)])
+  @@index([oauth_client_id])
+  @@index([user_id])
+  @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sso_domains {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  domain          String
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sso_providers {
+  id                String              @id @db.Uuid
+  resource_id       String?
+  created_at        DateTime?           @db.Timestamptz(6)
+  updated_at        DateTime?           @db.Timestamptz(6)
+  disabled          Boolean?
+  saml_providers    saml_providers[]
+  saml_relay_states saml_relay_states[]
+  sso_domains       sso_domains[]
+
+  @@index([resource_id], map: "sso_providers_resource_id_pattern_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model auth_users {
+  instance_id                 String?                @db.Uuid
+  id                          String                 @id @db.Uuid
+  aud                         String?                @db.VarChar(255)
+  role                        String?                @db.VarChar(255)
+  email                       String?                @unique(map: "users_email_partial_key", where: raw("(is_sso_user = false)")) @db.VarChar(255)
+  encrypted_password          String?                @db.VarChar(255)
+  email_confirmed_at          DateTime?              @db.Timestamptz(6)
+  invited_at                  DateTime?              @db.Timestamptz(6)
+  confirmation_token          String?                @unique(map: "confirmation_token_idx", where: raw("((confirmation_token)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
+  confirmation_sent_at        DateTime?              @db.Timestamptz(6)
+  recovery_token              String?                @unique(map: "recovery_token_idx", where: raw("((recovery_token)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
+  recovery_sent_at            DateTime?              @db.Timestamptz(6)
+  email_change_token_new      String?                @unique(map: "email_change_token_new_idx", where: raw("((email_change_token_new)::text !~ '^[0-9 ]*$'::text)")) @db.VarChar(255)
+  email_change                String?                @db.VarChar(255)
+  email_change_sent_at        DateTime?              @db.Timestamptz(6)
+  last_sign_in_at             DateTime?              @db.Timestamptz(6)
+  raw_app_meta_data           Json?
+  raw_user_meta_data          Json?
+  is_super_admin              Boolean?
+  created_at                  DateTime?              @db.Timestamptz(6)
+  updated_at                  DateTime?              @db.Timestamptz(6)
+  phone                       String?                @unique
+  phone_confirmed_at          DateTime?              @db.Timestamptz(6)
+  phone_change                String?                @default("")
+  phone_change_token          String?                @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime?              @db.Timestamptz(6)
+  confirmed_at                DateTime?              @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current  String?                @unique(map: "email_change_token_current_idx", where: raw("((email_change_token_current)::text !~ '^[0-9 ]*$'::text)")) @default("") @db.VarChar(255)
+  email_change_confirm_status Int?                   @default(0) @db.SmallInt
+  banned_until                DateTime?              @db.Timestamptz(6)
+  reauthentication_token      String?                @unique(map: "reauthentication_token_idx", where: raw("((reauthentication_token)::text !~ '^[0-9 ]*$'::text)")) @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime?              @db.Timestamptz(6)
+  is_sso_user                 Boolean                @default(false)
+  deleted_at                  DateTime?              @db.Timestamptz(6)
+  is_anonymous                Boolean                @default(false)
+  identities                  identities[]
+  mfa_factors                 mfa_factors[]
+  oauth_authorizations        oauth_authorizations[]
+  oauth_consents              oauth_consents[]
+  one_time_tokens             one_time_tokens[]
+  sessions                    sessions[]
+  users                       public_users?
+
+  @@index([instance_id])
+  @@index([is_anonymous])
+  @@map("users")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model activities {
+  slug                String               @unique @default("")
+  title               String               @default("")
+  seo_keywords        String               @default("")
+  seo_description     String               @default("")
+  description         String               @default("")
+  is_purchase_enabled Boolean              @default(false)
+  adult_price         Float                @default(0)
+  child_price         Float                @default(0)
+  openAt              String?
+  closeAt             String?
+  tiktok_video_id     String?
+  youtube_video_url   String               @default("")
+  visits_count        BigInt?
+  uuid                String               @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  google_maps_url     String               @default("")
+  images              String[]             @default([])
+  visible             Boolean              @default(true)
+  adults_price        BigInt?              @default(0)
+  teenagers_price     BigInt?              @default(0)
+  children_price      BigInt?              @default(0)
+  seniors_price       BigInt?              @default(0)
+  disabilities_price  BigInt?              @default(0)
+  activities_tickets  activities_tickets[]
+  activities_visits   activities_visits[]
+  businesses          businesses[]
+
+  @@schema("public")
+}
+
+model activities_tickets {
+  status                      String?        @default("not_used")
+  date                        DateTime?      @db.Date
+  adults_quantity             BigInt         @default(0)
+  children_quantity           BigInt         @default(0)
+  adults_price                Float          @default(0)
+  children_price              Float          @default(0)
+  tax_amount                  Float          @default(0)
+  subtotal_amount             Float          @default(0)
+  total_amount                Float          @default(0)
+  customer_name               String         @default("")
+  customer_email              String?
+  customer_phone              String         @default("")
+  created_at                  DateTime       @default(now()) @db.Timestamptz(6)
+  customer_id                 String         @default("")
+  customer_document           String         @default("")
+  customer_phone_country_code String         @default("")
+  user_uuid                   String?        @db.Uuid
+  whatsapp_message_sent       Boolean        @default(false)
+  email_message_sent          Boolean        @default(false)
+  used_at                     DateTime?      @db.Timestamptz(6)
+  uuid                        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paid_at                     DateTime?      @db.Timestamptz(6)
+  activity_uuid               String?        @db.Uuid
+  activity_title              String?
+  activity_picture            String         @default("")
+  activity_slug               String         @default("")
+  payment_status              payment_status @default(pending)
+  activities                  activities?    @relation(fields: [activity_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  users                       public_users?  @relation(fields: [user_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model activities_visits {
+  uuid          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activity_uuid String?     @db.Uuid
+  date          DateTime?   @db.Date
+  count         BigInt      @default(0)
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  activities    activities? @relation(fields: [activity_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model businesses {
+  uuid          String         @id(map: "business_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type          business_type?
+  activity_uuid String?        @db.Uuid
+  user_uuid     String         @db.Uuid
+  hotel_uuid    String?        @db.Uuid
+  role          String         @default("business_employee")
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  modules       String[]       @default([])
+  activities    activities?    @relation(fields: [activity_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  hotels        hotels?        @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  users         public_users   @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model expenses_delete {
+  id          BigInt    @id @default(autoincrement())
+  description String?
+  amount      Float?
+  date        DateTime? @db.Timestamptz(6)
+  card        String?
+  bank        String?
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@schema("public")
+}
+
+model hotels {
+  uuid                               String                               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                              String?
+  description                        String?
+  location                           String?
+  created_at                         DateTime                             @default(now()) @db.Timestamptz(6)
+  slug                               String?                              @unique
+  image                              String?
+  logo_url                           String?
+  phone_number                       String?
+  check_in_time                      DateTime                             @default(dbgenerated("'15:00:00'::time without time zone")) @db.Time(6)
+  check_out_time                     DateTime                             @default(dbgenerated("'11:00:00'::time without time zone")) @db.Time(6)
+  disabled                           Boolean                              @default(true)
+  businesses                         businesses[]
+  hotels_albums                      hotels_albums[]
+  hotels_comments                    hotels_comments[]
+  hotels_customers                   hotels_customers[]
+  hotels_customers_conversations     hotels_customers_conversations[]
+  hotels_images                      hotels_images[]
+  hotels_invoices_v2                 hotels_invoices_v2[]
+  hotels_kitchen_bills               hotels_kitchen_bills[]
+  hotels_kitchen_products            hotels_kitchen_products[]
+  hotels_reservations                hotels_reservations[]
+  hotels_reservations_v2             hotels_reservations_v2[]
+  hotels_rooms                       hotels_rooms[]
+  hotels_rooms_images                hotels_rooms_images[]
+  hotels_rooms_reservations          hotels_rooms_reservations[]
+  hotels_rooms_reservations_messages hotels_rooms_reservations_messages[]
+  hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]
+  hotels_rooms_types                 hotels_rooms_types[]
+  hotels_subscriptions               hotels_subscriptions[]
+  hotels_visits                      hotels_visits[]
+  hotels_whatsapp_messages           hotels_whatsapp_messages[]
+  users_hotels                       users_hotels[]
+
+  @@schema("public")
+}
+
+model hotels_albums {
+  uuid                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid           String?                @db.Uuid
+  title                String?
+  description          String?
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  room_uuid            String?                @db.Uuid
+  hotels               hotels?                @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_rooms         hotels_rooms?          @relation(fields: [room_uuid], references: [uuid], onDelete: Cascade)
+  hotels_albums_photos hotels_albums_photos[]
+
+  @@schema("public")
+}
+
+model hotels_albums_photos {
+  uuid          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  album_uuid    String?        @db.Uuid
+  url           String?
+  position      Int?
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  pathname      String?
+  hotels_albums hotels_albums? @relation(fields: [album_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model hotels_comments {
+  uuid                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid          String?              @db.Uuid
+  room_uuid           String?              @db.Uuid
+  customer_uuid       String?              @db.Uuid
+  name                String?
+  comment             String?
+  rating              BigInt?              @default(5)
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  reservation_uuid    String?              @db.Uuid
+  hotels_customers    hotels_customers?    @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade)
+  hotels              hotels?              @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_reservations hotels_reservations? @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
+  hotels_rooms        hotels_rooms?        @relation(fields: [room_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model hotels_customers {
+  uuid                               String                               @id(map: "hotel_customers_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  full_name                          String
+  email                              String
+  document                           String
+  document_id                        String
+  phone_country_code                 String
+  phone                              String
+  created_at                         DateTime                             @default(now()) @db.Timestamptz(6)
+  hotel_uuid                         String?                              @db.Uuid
+  country                            String?
+  whatsapp_id                        String?
+  address                            String?
+  verifed_whatsapp_at                DateTime?                            @db.Timestamptz(6)
+  verified_cedula_at                 DateTime?                            @db.Timestamptz(6)
+  hotels_comments                    hotels_comments[]
+  hotels                             hotels?                              @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_customers_conversations     hotels_customers_conversations[]
+  hotels_invoices                    hotels_invoices[]
+  hotels_invoices_v2                 hotels_invoices_v2[]
+  hotels_kitchen_bills               hotels_kitchen_bills[]
+  hotels_reservations                hotels_reservations[]
+  hotels_reservations_v2             hotels_reservations_v2[]
+  hotels_rooms_reservations          hotels_rooms_reservations[]
+  hotels_rooms_reservations_messages hotels_rooms_reservations_messages[]
+  hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]
+  hotels_whatsapp_messages           hotels_whatsapp_messages[]
+
+  @@schema("public")
+}
+
+model hotels_customers_conversations {
+  uuid             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid       String?           @db.Uuid
+  customer_uuid    String?           @db.Uuid
+  latest_type      String?
+  latest_body      String?
+  latest_timestamp String?
+  from_me          Boolean?
+  created_at       DateTime          @default(now()) @db.Timestamptz(6)
+  is_new           Boolean           @default(false)
+  ack              BigInt            @default(0)
+  hotels_customers hotels_customers? @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade)
+  hotels           hotels?           @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([hotel_uuid, customer_uuid], map: "hotels_customers_conversations_hotel_customer_unique")
+  @@schema("public")
+}
+
+model hotels_images {
+  id         BigInt   @id @default(autoincrement())
+  hotel_uuid String?  @db.Uuid
+  url        String
+  order      BigInt   @default(0)
+  created_at DateTime @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  hotels     hotels?  @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model hotels_invoices {
+  uuid                      String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoice_number            String?
+  customer_uuid             String?                     @db.Uuid
+  discount_comment          String?
+  discount_total            Float?
+  tax_comment               String?
+  tax_total                 Float?
+  created_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  discount_percentage       BigInt?
+  tax_percentage            BigInt?
+  reservation_uuid          String?                     @db.Uuid
+  hotels_customers          hotels_customers?           @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade)
+  hotels_reservations       hotels_reservations?        @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
+  hotels_invoices_items     hotels_invoices_items[]
+  hotels_invoices_payments  hotels_invoices_payments[]
+  hotels_rooms_reservations hotels_rooms_reservations[]
+
+  @@schema("public")
+}
+
+model hotels_invoices_items {
+  uuid            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoice_uuid    String?          @db.Uuid
+  description     String?
+  amount          Float?
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  hotels_invoices hotels_invoices? @relation(fields: [invoice_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hotels_invoices_items_v2 {
+  uuid                         String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoice_uuid                 String                        @db.Uuid
+  room_reservation_uuid        String?                       @db.Uuid
+  description                  String
+  quantity                     Decimal                       @default(1) @db.Decimal(10, 2)
+  unit_price                   Decimal                       @db.Decimal(10, 2)
+  total                        Decimal                       @db.Decimal(10, 2)
+  position                     Int                           @default(0)
+  created_at                   DateTime                      @default(now()) @db.Timestamptz(6)
+  hotels_invoices_v2           hotels_invoices_v2            @relation(fields: [invoice_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  hotels_reservations_rooms_v2 hotels_reservations_rooms_v2? @relation(fields: [room_reservation_uuid], references: [uuid], onUpdate: NoAction)
+
+  @@index([invoice_uuid], map: "idx_invoice_items_v2_invoice")
+  @@schema("public")
+}
+
+model hotels_invoices_payments {
+  uuid            String           @id(map: "invoices_payments_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoice_uuid    String?          @db.Uuid
+  payment_method  String?
+  amount          Float?
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  hotels_invoices hotels_invoices? @relation(fields: [invoice_uuid], references: [uuid], onDelete: Cascade, map: "invoices_payments_invoice_uuid_fkey")
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hotels_invoices_payments_v2 {
+  uuid               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoice_uuid       String             @db.Uuid
+  amount             Decimal            @db.Decimal(10, 2)
+  payment_method     String
+  status             String             @default("confirmed")
+  notes              String?
+  paid_at            DateTime           @default(now()) @db.Timestamptz(6)
+  refunded_at        DateTime?          @db.Timestamptz(6)
+  refunded_by        String?            @db.Uuid
+  refund_reason      String?
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  hotels_invoices_v2 hotels_invoices_v2 @relation(fields: [invoice_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  users              public_users?      @relation(fields: [refunded_by], references: [uuid], onUpdate: NoAction)
+
+  @@index([invoice_uuid], map: "idx_invoice_payments_v2_invoice")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hotels_invoices_v2 {
+  uuid                                       String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid                                 String                        @db.Uuid
+  reservation_uuid                           String?                       @db.Uuid
+  customer_uuid                              String?                       @db.Uuid
+  invoice_number                             String?
+  status                                     String                        @default("draft")
+  currency                                   String                        @default("USD")
+  subtotal                                   Decimal                       @default(0) @db.Decimal(10, 2)
+  discount_type                              String?
+  discount_value                             Decimal?                      @db.Decimal(10, 2)
+  discount_total                             Decimal                       @default(0) @db.Decimal(10, 2)
+  tax_name                                   String                        @default("IVA")
+  tax_percentage                             Decimal?                      @db.Decimal(5, 2)
+  tax_total                                  Decimal                       @default(0) @db.Decimal(10, 2)
+  total                                      Decimal                       @default(0) @db.Decimal(10, 2)
+  paid_amount                                Decimal                       @default(0) @db.Decimal(10, 2)
+  balance_due                                Decimal?                      @default(dbgenerated("(total - paid_amount)")) @db.Decimal(10, 2)
+  notes                                      String?
+  created_by                                 String?                       @db.Uuid
+  voided_by                                  String?                       @db.Uuid
+  voided_at                                  DateTime?                     @db.Timestamptz(6)
+  voided_reason                              String?
+  created_at                                 DateTime                      @default(now()) @db.Timestamptz(6)
+  hotels_invoices_items_v2                   hotels_invoices_items_v2[]
+  hotels_invoices_payments_v2                hotels_invoices_payments_v2[]
+  users_hotels_invoices_v2_created_byTousers public_users?                 @relation("hotels_invoices_v2_created_byTousers", fields: [created_by], references: [uuid], onUpdate: NoAction)
+  hotels_customers                           hotels_customers?             @relation(fields: [customer_uuid], references: [uuid], onUpdate: NoAction)
+  hotels                                     hotels                        @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  hotels_reservations_v2                     hotels_reservations_v2?       @relation(fields: [reservation_uuid], references: [uuid], onUpdate: NoAction)
+  users_hotels_invoices_v2_voided_byTousers  public_users?                 @relation("hotels_invoices_v2_voided_byTousers", fields: [voided_by], references: [uuid], onUpdate: NoAction)
+
+  @@index([customer_uuid], map: "idx_invoices_v2_customer")
+  @@index([hotel_uuid], map: "idx_invoices_v2_hotel")
+  @@index([reservation_uuid], map: "idx_invoices_v2_reservation")
+  @@index([hotel_uuid, status], map: "idx_invoices_v2_status")
+  @@schema("public")
+}
+
+model hotels_kitchen_bills {
+  uuid                            String                            @id(map: "hotels_kitchen_bill_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status                          String?                           @default("closed")
+  customer_uuid                   String?                           @db.Uuid
+  reservation_uuid                String?                           @unique @db.Uuid
+  created_at                      DateTime                          @default(now()) @db.Timestamptz(6)
+  hotel_uuid                      String?                           @db.Uuid
+  hotels_customers                hotels_customers?                 @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade, map: "hotels_kitchen_bill_customer_uuid_fkey")
+  hotels_rooms_reservations       hotels_rooms_reservations?        @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade, map: "hotels_kitchen_bill_reservation_uuid_fkey")
+  hotels                          hotels?                           @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_kitchen_bills_items      hotels_kitchen_bills_items[]
+  hotels_rooms_reservations_items hotels_rooms_reservations_items[]
+
+  @@schema("public")
+}
+
+model hotels_kitchen_bills_items {
+  uuid                    String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_uuid            String?                  @db.Uuid
+  quantity                BigInt?
+  total                   Float?
+  created_at              DateTime                 @default(now()) @db.Timestamptz(6)
+  bill_uuid               String?                  @db.Uuid
+  hotels_kitchen_bills    hotels_kitchen_bills?    @relation(fields: [bill_uuid], references: [uuid], onDelete: Cascade)
+  hotels_kitchen_products hotels_kitchen_products? @relation(fields: [product_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model hotels_kitchen_products {
+  name                       String?
+  price                      Float?
+  created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  uuid                       String                       @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid                 String?                      @db.Uuid
+  type                       String?
+  hotels_kitchen_bills_items hotels_kitchen_bills_items[]
+  hotels                     hotels?                      @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model hotels_plans {
+  uuid                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String?
+  price                Float?
+  billing_cycle        String?
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  hotels_subscriptions hotels_subscriptions[]
+
+  @@schema("public")
+}
+
+model hotels_reservations {
+  uuid                        String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid                  String?                       @db.Uuid
+  room_uuid                   String?                       @db.Uuid
+  customer_uuid               String?                       @db.Uuid
+  status                      String?
+  check_in_date               DateTime                      @db.Timestamptz(6)
+  check_out_date              DateTime                      @db.Timestamptz(6)
+  adults_count                BigInt?
+  children_count              BigInt?
+  babies_count                BigInt?
+  notes                       String?
+  created_at                  DateTime                      @default(now()) @db.Timestamptz(6)
+  check_in_time               DateTime                      @db.Time(6)
+  check_out_time              DateTime                      @db.Time(6)
+  hotels_comments             hotels_comments[]
+  hotels_invoices             hotels_invoices[]
+  hotels_customers            hotels_customers?             @relation(fields: [customer_uuid], references: [uuid])
+  hotels                      hotels?                       @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_rooms                hotels_rooms?                 @relation(fields: [room_uuid], references: [uuid], onDelete: Cascade)
+  hotels_reservations_history hotels_reservations_history[]
+  hotels_reservations_rooms   hotels_reservations_rooms[]
+  hotels_whatsapp_messages    hotels_whatsapp_messages[]
+
+  @@schema("public")
+}
+
+model hotels_reservations_history {
+  uuid                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reservation_uuid    String?              @db.Uuid
+  message             String?
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  user_uuid           String?              @db.Uuid
+  hotels_reservations hotels_reservations? @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
+  users               public_users?        @relation(fields: [user_uuid], references: [uuid])
+
+  @@schema("public")
+}
+
+model hotels_reservations_rooms {
+  uuid                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reservation_uuid    String?              @db.Uuid
+  room_uuid           String?              @db.Uuid
+  hotels_reservations hotels_reservations? @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
+  hotels_rooms        hotels_rooms?        @relation(fields: [room_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hotels_reservations_rooms_v2 {
+  uuid                     String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reservation_uuid         String                     @db.Uuid
+  room_uuid                String                     @db.Uuid
+  adults_count             Int                        @default(1)
+  children_count           Int                        @default(0)
+  babies_count             Int                        @default(0)
+  price_per_night          Decimal                    @db.Decimal(10, 2)
+  created_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  hotels_invoices_items_v2 hotels_invoices_items_v2[]
+  hotels_reservations_v2   hotels_reservations_v2     @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  hotels_rooms             hotels_rooms               @relation(fields: [room_uuid], references: [uuid], onUpdate: NoAction)
+
+  @@unique([reservation_uuid, room_uuid])
+  @@index([reservation_uuid], map: "idx_reservation_rooms_v2_reservation")
+  @@index([room_uuid], map: "idx_reservation_rooms_v2_room")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hotels_reservations_v2 {
+  uuid                         String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid                   String                         @db.Uuid
+  customer_uuid                String?                        @db.Uuid
+  check_in_date                DateTime                       @db.Date
+  check_out_date               DateTime                       @db.Date
+  status                       String                         @default("pending")
+  source                       String?                        @default("direct")
+  notes                        String?
+  confirmed_at                 DateTime?                      @db.Timestamptz(6)
+  checked_in_at                DateTime?                      @db.Timestamptz(6)
+  checked_out_at               DateTime?                      @db.Timestamptz(6)
+  cancelled_at                 DateTime?                      @db.Timestamptz(6)
+  created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  hotels_invoices_v2           hotels_invoices_v2[]
+  hotels_reservations_rooms_v2 hotels_reservations_rooms_v2[]
+  hotels_customers             hotels_customers?              @relation(fields: [customer_uuid], references: [uuid], onUpdate: NoAction)
+  hotels                       hotels                         @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([customer_uuid], map: "idx_reservations_v2_customer")
+  @@index([hotel_uuid, check_in_date, check_out_date], map: "idx_reservations_v2_dates")
+  @@index([hotel_uuid], map: "idx_reservations_v2_hotel")
+  @@index([hotel_uuid, status], map: "idx_reservations_v2_status")
+  @@schema("public")
+}
+
+model hotels_rooms {
+  uuid                               String                               @id(map: "hotels_rooms_pkey1") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid                         String                               @db.Uuid
+  name                               String?
+  type                               String?
+  price                              Float?
+  capacity                           BigInt?
+  active                             Boolean                              @default(true)
+  created_at                         DateTime                             @default(now()) @db.Timestamptz(6)
+  clean_status                       String
+  beds                               String[]                             @default([])
+  amenities                          String[]                             @default([])
+  picture                            String?
+  room_type_uuid                     String?                              @db.Uuid
+  hotels_albums                      hotels_albums[]
+  hotels_comments                    hotels_comments[]
+  hotels_reservations                hotels_reservations[]
+  hotels_reservations_rooms          hotels_reservations_rooms[]
+  hotels_reservations_rooms_v2       hotels_reservations_rooms_v2[]
+  hotels                             hotels                               @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "hotels_rooms_hotel_uuid_fkey1")
+  hotels_rooms_types                 hotels_rooms_types?                  @relation(fields: [room_type_uuid], references: [uuid])
+  hotels_rooms_images                hotels_rooms_images[]
+  hotels_rooms_reservations          hotels_rooms_reservations[]
+  hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model hotels_rooms_images {
+  uuid            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_room_uuid String?       @db.Uuid
+  url             String        @default("")
+  order           BigInt        @default(0)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  hotel_uuid      String?       @db.Uuid
+  hotels_rooms    hotels_rooms? @relation(fields: [hotel_room_uuid], references: [uuid], onDelete: Cascade)
+  hotels          hotels?       @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model hotels_rooms_reservations {
+  uuid                               String                               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_room_uuid                    String?                              @db.Uuid
+  created_at                         DateTime                             @default(now()) @db.Timestamptz(6)
+  check_in_date                      DateTime                             @db.Timestamptz(6)
+  check_out_date                     DateTime                             @db.Timestamptz(6)
+  status                             reservation_status                   @default(pending)
+  hotel_uuid                         String?                              @db.Uuid
+  adults_count                       BigInt?                              @default(0)
+  children_count                     BigInt?                              @default(0)
+  payments_amount                    Float                                @default(0)
+  payment_status                     payment_status                       @default(pending)
+  notes                              String?
+  customer_uuid                      String?                              @db.Uuid
+  total_amount                       Float                                @default(0)
+  discount_amount                    Float                                @default(0)
+  additional_comment                 String?
+  additional_amount                  Float                                @default(0)
+  room_item_amount                   Float                                @default(0)
+  invoice_uuid                       String?                              @db.Uuid
+  hotels_kitchen_bills               hotels_kitchen_bills?
+  hotels_customers                   hotels_customers?                    @relation(fields: [customer_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  hotels_rooms                       hotels_rooms?                        @relation(fields: [hotel_room_uuid], references: [uuid], onDelete: Cascade)
+  hotels                             hotels?                              @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_invoices                    hotels_invoices?                     @relation(fields: [invoice_uuid], references: [uuid])
+  hotels_rooms_reservations_items    hotels_rooms_reservations_items[]
+  hotels_rooms_reservations_messages hotels_rooms_reservations_messages[]
+  hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]
+
+  @@schema("public")
+}
+
+model hotels_rooms_reservations_items {
+  hotel_room_reservation_uuid String?                    @db.Uuid
+  name                        String?
+  amount                      Float?
+  created_at                  DateTime                   @default(now()) @db.Timestamptz(6)
+  uuid                        String                     @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                        String
+  bill_uuid                   String?                    @db.Uuid
+  hotels_rooms_reservations   hotels_rooms_reservations? @relation(fields: [hotel_room_reservation_uuid], references: [uuid], onDelete: Cascade, map: "hotels_rooms_reservations_item_hotel_room_reservation_uuid_fkey")
+  hotels_kitchen_bills        hotels_kitchen_bills?      @relation(fields: [bill_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model hotels_rooms_reservations_messages {
+  uuid                      String                     @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_uuid             String?                    @db.Uuid
+  sid                       String
+  to                        String?
+  message                   String?
+  created_at                DateTime                   @default(now()) @db.Timestamptz(6)
+  reservation_uuid          String?                    @db.Uuid
+  hotel_uuid                String?                    @db.Uuid
+  status                    String                     @default("pending")
+  price                     Float                      @default(0)
+  type                      String                     @default("sms")
+  clicked_at                DateTime?                  @db.Timestamptz(6)
+  hotels_customers          hotels_customers?          @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade, map: "hotels_messages_customer_uuid_fkey")
+  hotels                    hotels?                    @relation(fields: [hotel_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  hotels_rooms_reservations hotels_rooms_reservations? @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
+
+  @@id([uuid, sid])
+  @@schema("public")
+}
+
+model hotels_rooms_reservations_payments {
+  hotel_uuid                  String?                    @db.Uuid
+  hotel_room_uuid             String?                    @db.Uuid
+  customer_uuid               String?                    @db.Uuid
+  amount                      Float?
+  payment_method              String?
+  comment                     String?
+  created_at                  DateTime                   @default(now()) @db.Timestamptz(6)
+  hotel_room_reservation_uuid String?                    @db.Uuid
+  uuid                        String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotels_customers            hotels_customers?          @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade, map: "hotels_rooms_payments_customer_uuid_fkey")
+  hotels_rooms_reservations   hotels_rooms_reservations? @relation(fields: [hotel_room_reservation_uuid], references: [uuid], onDelete: Cascade, map: "hotels_rooms_payments_hotel_room_reservation_uuid_fkey")
+  hotels_rooms                hotels_rooms?              @relation(fields: [hotel_room_uuid], references: [uuid], onDelete: Cascade, map: "hotels_rooms_payments_hotel_room_uuid_fkey")
+  hotels                      hotels?                    @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, map: "hotels_rooms_payments_hotel_uuid_fkey")
+
+  @@schema("public")
+}
+
+model hotels_rooms_types {
+  uuid         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid   String?        @db.Uuid
+  name         String?
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  hotels_rooms hotels_rooms[]
+  hotels       hotels?        @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model hotels_subscriptions {
+  uuid            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid      String?       @db.Uuid
+  plan_uuid       String?       @db.Uuid
+  status          String?
+  start_at        DateTime?     @db.Timestamptz(6)
+  next_billing_at DateTime?     @db.Timestamptz(6)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  hotels          hotels?       @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_plans    hotels_plans? @relation(fields: [plan_uuid], references: [uuid])
+
+  @@schema("public")
+}
+
+model hotels_visits {
+  id         BigInt    @id @default(autoincrement())
+  hotel_uuid String?   @db.Uuid
+  date       DateTime? @db.Date
+  count      BigInt    @default(0)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  hotels     hotels?   @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model hotels_whatsapp_messages {
+  customer_uuid       String?              @db.Uuid
+  to                  String?
+  message             String?
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  uuid                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid          String?              @db.Uuid
+  reservation_uuid    String?              @db.Uuid
+  hotels_customers    hotels_customers?    @relation(fields: [customer_uuid], references: [uuid])
+  hotels              hotels?              @relation(fields: [hotel_uuid], references: [uuid])
+  hotels_reservations hotels_reservations? @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model public_users {
+  uuid                                                    String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  picture                                                 String?
+  full_name                                               String?
+  email                                                   String                        @default("")
+  phone_country_code                                      String?
+  phone                                                   String?
+  created_at                                              DateTime                      @default(now()) @db.Timestamptz(6)
+  document                                                String?
+  document_id                                             String?
+  role                                                    user_role                     @default(tourist)
+  phone_code                                              String?
+  activities_tickets                                      activities_tickets[]
+  businesses                                              businesses[]
+  hotels_invoices_payments_v2                             hotels_invoices_payments_v2[]
+  hotels_invoices_v2_hotels_invoices_v2_created_byTousers hotels_invoices_v2[]          @relation("hotels_invoices_v2_created_byTousers")
+  hotels_invoices_v2_hotels_invoices_v2_voided_byTousers  hotels_invoices_v2[]          @relation("hotels_invoices_v2_voided_byTousers")
+  hotels_reservations_history                             hotels_reservations_history[]
+  users                                                   auth_users                    @relation(fields: [uuid], references: [id], onDelete: Cascade)
+  users_hotels                                            users_hotels[]
+
+  @@map("users")
+  @@schema("public")
+}
+
+model users_hotels {
+  uuid       String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid String?       @db.Uuid
+  role       String?
+  modules    String[]
+  created_at DateTime      @default(now()) @db.Timestamptz(6)
+  user_uuid  String?       @db.Uuid
+  hotels     hotels?       @relation(fields: [hotel_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  users      public_users? @relation(fields: [user_uuid], references: [uuid], onDelete: NoAction)
+
+  @@schema("public")
+}
+
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+  phone
+
+  @@schema("auth")
+}
+
+enum oauth_authorization_status {
+  pending
+  approved
+  denied
+  expired
+
+  @@schema("auth")
+}
+
+enum oauth_client_type {
+  public
+  confidential
+
+  @@schema("auth")
+}
+
+enum oauth_registration_type {
+  dynamic
+  manual
+
+  @@schema("auth")
+}
+
+enum oauth_response_type {
+  code
+
+  @@schema("auth")
+}
+
+enum one_time_token_type {
+  confirmation_token
+  reauthentication_token
+  recovery_token
+  email_change_token_new
+  email_change_token_current
+  phone_change_token
+
+  @@schema("auth")
+}
+
+enum app_role {
+  admin
+  travelAgency
+  newsPublisher
+  place
+
+  @@schema("public")
+}
+
+enum business_type {
+  hotel
+  activity
+
+  @@schema("public")
+}
+
+enum payment_status {
+  paid
+  pending
+
+  @@schema("public")
+}
+
+enum reservation_status {
+  pending
+  confirmed
+  checked_in  @map("checked-in")
+  checked_out @map("checked-out")
+  canceled
+  refunded
+  no_show     @map("no-show")
+
+  @@schema("public")
+}
+
+enum user_role {
+  admin
+  business_admin
+  business_employee
+  tourist
+
+  @@schema("public")
+}
