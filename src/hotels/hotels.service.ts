@@ -7,8 +7,24 @@ export class HotelsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.hotels.findMany();
+  async findAll(options: {
+    page: number;
+    limit: number;
+    sortBy: string;
+    sortOrder: string;
+    disabled: boolean;
+  }) {
+    const { page, limit, sortBy, sortOrder, disabled } = options;
+    const skip = (page - 1) * limit;
+
+    this.logger.log(options);
+
+    return this.prisma.hotels.findMany({
+      orderBy: { [sortBy]: sortOrder },
+      where: { disabled },
+      skip,
+      take: limit,
+    });
   }
 
   async findOne(uuid: string) {

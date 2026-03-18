@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { isUUID } from 'class-validator';
-import { UserHotelsService } from '../../hotels/user_hotels/user_hotels.service';
+import { UserHotelsService } from '../../dashboard/hotels/user_hotels/user_hotels.service';
 
 @Injectable()
 export class HotelAccessGuard implements CanActivate {

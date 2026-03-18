@@ -9,15 +9,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { HotelAccessGuard } from '../../common/guards/hotel-access.guard';
+import { HotelAccessGuard } from '../../../common/guards/hotel-access.guard';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
 import { RoomTypesService } from './room-types.service';
 
-@ApiTags('Room Types')
+@ApiTags('Dashboard / Room Types')
 @ApiBearerAuth()
 @UseGuards(HotelAccessGuard)
-@Controller('hotels/:hotelUuid/room-types')
+@Controller('dashboard/hotels/:hotelUuid/rooms/:roomUuid/types')
 export class RoomTypesController {
   constructor(private readonly roomTypesService: RoomTypesService) {}
 

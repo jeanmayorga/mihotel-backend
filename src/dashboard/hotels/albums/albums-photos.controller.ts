@@ -9,15 +9,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { HotelAccessGuard } from '../../common/guards/hotel-access.guard';
+import { HotelAccessGuard } from '../../../common/guards/hotel-access.guard';
 import { CreateAlbumPhotoDto } from './dto/create-album-photo.dto';
 import { UpdateAlbumPhotoDto } from './dto/update-album-photo.dto';
 import { AlbumsPhotosService } from './albums-photos.service';
 
-@ApiTags('Albums Photos')
+@ApiTags('Dashboard / Albums Photos')
 @ApiBearerAuth()
 @UseGuards(HotelAccessGuard)
-@Controller('hotels/:hotelUuid/albums/:albumUuid/photos')
+@Controller('dashboard/hotels/:hotelUuid/albums/:albumUuid/photos')
 export class AlbumsPhotosController {
   constructor(private readonly albumsPhotosService: AlbumsPhotosService) {}
 

@@ -8,15 +8,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { HotelAccessGuard } from '../../common/guards/hotel-access.guard';
+import { HotelAccessGuard } from '../../../common/guards/hotel-access.guard';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { SubscriptionsService } from './subscriptions.service';
 
-@ApiTags('Subscriptions')
+@ApiTags('Dashboard / Subscriptions')
 @ApiBearerAuth()
 @UseGuards(HotelAccessGuard)
-@Controller('hotels/:hotelUuid/subscriptions')
+@Controller('dashboard/hotels/:hotelUuid/subscriptions')
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 

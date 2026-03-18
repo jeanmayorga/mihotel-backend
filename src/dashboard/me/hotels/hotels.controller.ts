@@ -1,13 +1,11 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MeHotelsService } from './hotels.service';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
-import { MeAccessGuard } from 'src/common/guards/me-access.guard';
+import { AuthUserUuid } from '../../../common/decorators/auth-user-uuid.decorator';
 
-@ApiTags('Me/Hotels')
+@ApiTags('Dashboard / Me Hotels')
 @ApiBearerAuth()
-@UseGuards(MeAccessGuard)
-@Controller('me/hotels')
+@Controller('dashboard/me/hotels')
 export class MeHotelsController {
   constructor(private readonly meHotelsService: MeHotelsService) {}
 

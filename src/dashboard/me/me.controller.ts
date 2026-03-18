@@ -1,17 +1,10 @@
-import {
-  Controller,
-  Get,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuthUserUuid } from '../common/decorators/auth-user-uuid.decorator';
+import { Controller, Get, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AuthUserUuid } from '../../common/decorators/auth-user-uuid.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { MeAccessGuard } from 'src/common/guards/me-access.guard';
 
 @ApiBearerAuth()
-@UseGuards(MeAccessGuard)
-@Controller('me')
+@Controller('dashboard/me')
 export class MeController {
   constructor(private readonly prisma: PrismaService) {}
 

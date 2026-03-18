@@ -1,10 +1,12 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { HotelAccessGuard } from '../../../../common/guards/hotel-access.guard';
 import { PlansService } from './plans.service';
 
-@ApiTags('Plans')
+@ApiTags('Dashboard / Plans')
 @ApiBearerAuth()
-@Controller('plans')
+@UseGuards(HotelAccessGuard)
+@Controller('dashboard/hotels/:hotelUuid/plans')
 export class PlansController {
   constructor(private readonly plansService: PlansService) {}
 

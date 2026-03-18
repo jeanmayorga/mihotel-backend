@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAlbumPhotoDto } from './dto/create-album-photo.dto';
 import { UpdateAlbumPhotoDto } from './dto/update-album-photo.dto';
 
