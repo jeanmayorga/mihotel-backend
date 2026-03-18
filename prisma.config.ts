@@ -9,6 +9,6 @@ export default defineConfig({
     path: './prisma/migrations',
   },
   datasource: {
-    url: env('SESSION_POOLER_URL'),
+    url: env('DATABASE_URL'),
   },
 });

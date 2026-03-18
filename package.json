@@ -25,6 +25,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@prisma/pg-worker": "^6.9.0",
     "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "reflect-metadata": "^0.2.2",
