@@ -1,4 +1,10 @@
-import { Controller, ForbiddenException, Headers, Post } from '@nestjs/common';
+import {
+  Controller,
+  ForbiddenException,
+  Get,
+  Headers,
+  Post,
+} from '@nestjs/common';
 // import { ApiExcludeController } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
 
@@ -7,8 +13,7 @@ import { BillingService } from './billing.service';
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
-  @Post('billing')
-  async processMonthlyBilling(@Headers('authorization') authorization: string) {
+  private async processCron(authorization: string | undefined) {
     if (
       !process.env.CRON_SECRET ||
       authorization !== `Bearer ${process.env.CRON_SECRET}`
@@ -17,5 +22,19 @@ export class BillingController {
     }
 
     return this.billingService.processMonthlyBilling();
+  }
+
+  @Post('billing')
+  async processMonthlyBilling(
+    @Headers('authorization') authorization: string | undefined,
+  ) {
+    return this.processCron(authorization);
+  }
+
+  @Get('billing')
+  async processMonthlyBillingGet(
+    @Headers('authorization') authorization: string | undefined,
+  ) {
+    return this.processCron(authorization);
   }
 }
