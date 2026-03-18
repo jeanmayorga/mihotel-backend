@@ -11,7 +11,6 @@ export class HotelsController {
 
   @Get()
   findAll(@CurrentAuthUserUuid() authUserUuid: string) {
-    console.log({ authUserUuid });
-    return this.hotelsService.findAll();
+    return this.hotelsService.findAll(authUserUuid);
   }
 }

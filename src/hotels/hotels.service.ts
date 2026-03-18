@@ -7,10 +7,14 @@ export class HotelsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    this.logger.log('Fetching all hotels');
-    const hotels = await this.prisma.hotels.findMany();
-    this.logger.log(`Found ${hotels.length} hotels`);
-    return hotels;
+  async findAll(authUserUuid: string) {
+    this.logger.log(`Fetching hotels for user ${authUserUuid}`);
+    return this.prisma.hotels.findMany({
+      where: {
+        users_hotels: {
+          some: { user_uuid: authUserUuid },
+        },
+      },
+    });
   }
 }

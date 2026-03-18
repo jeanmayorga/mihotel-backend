@@ -7,8 +7,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { HotelAccessGuard } from '../../common/guards/hotel-access.guard';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { FilterRoomsDto } from './dto/filter-rooms.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -16,6 +18,7 @@ import { RoomsService } from './rooms.service';
 
 @ApiTags('Rooms')
 @ApiBearerAuth()
+@UseGuards(HotelAccessGuard)
 @Controller('hotels/:hotelUuid/rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
