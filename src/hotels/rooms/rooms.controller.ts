@@ -6,9 +6,11 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { FilterRoomsDto } from './dto/filter-rooms.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomsService } from './rooms.service';
 
@@ -24,8 +26,11 @@ export class RoomsController {
   }
 
   @Get()
-  findAll(@Param('hotelUuid') hotelUuid: string) {
-    return this.roomsService.findAll(hotelUuid);
+  findAll(
+    @Param('hotelUuid') hotelUuid: string,
+    @Query() { sortBy, sortOrder }: FilterRoomsDto,
+  ) {
+    return this.roomsService.findAll(hotelUuid, sortBy, sortOrder);
   }
 
   @Get(':uuid')

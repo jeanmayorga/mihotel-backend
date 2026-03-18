@@ -23,19 +23,21 @@ export class RoomsService {
     });
   }
 
-  async findAll(hotelUuid: string) {
+  async findAll(
+    hotelUuid: string,
+    sortBy: 'name' | 'created_at' | 'clean_status' = 'created_at',
+    sortOrder: 'asc' | 'desc' = 'desc',
+  ) {
     this.logger.log(`Fetching rooms for hotel ${hotelUuid}`);
     return this.prisma.hotels_rooms.findMany({
       where: { hotel_uuid: hotelUuid },
       include: {
         hotels_rooms_types: true,
         hotels_rooms_images: {
-          select: {
-            url: true,
-          },
+          select: { url: true },
         },
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: { [sortBy]: sortOrder },
     });
   }
 

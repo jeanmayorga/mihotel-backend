@@ -1,14 +1,63 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class UpdateRoomDto {
-  @ApiPropertyOptional() name?: string;
-  @ApiPropertyOptional() type?: string;
-  @ApiPropertyOptional() price?: number;
-  @ApiPropertyOptional() capacity?: number;
-  @ApiPropertyOptional() clean_status?: string;
-  @ApiPropertyOptional({ type: [String] }) beds?: string[];
-  @ApiPropertyOptional({ type: [String] }) amenities?: string[];
-  @ApiPropertyOptional() picture?: string;
-  @ApiPropertyOptional() room_type_uuid?: string;
-  @ApiPropertyOptional() active?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  price?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  capacity?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  clean_status?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  beds?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  picture?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  room_type_uuid?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  active?: boolean;
 }
