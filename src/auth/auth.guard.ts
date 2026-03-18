@@ -40,7 +40,7 @@ export class AuthGuard implements CanActivate {
       } = await this.supabase.auth.getUser(token);
 
       if (error || !user) {
-        console.error(error);
+        console.error({ error });
         throw new UnauthorizedException('Invalid token');
       }
 

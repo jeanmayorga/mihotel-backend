@@ -1,7 +1,9 @@
 import { Controller, Get, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentAuthUserUuid } from './decorators/current-auth-user-uuid.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly prisma: PrismaService) {}
