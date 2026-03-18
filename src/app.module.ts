@@ -8,6 +8,7 @@ import { HotelsModule } from './hotels/hotels.module';
 import { RoomTypesModule } from './hotels/room-types/room-types.module';
 import { RoomsModule } from './hotels/rooms/rooms.module';
 import { SubscriptionsModule } from './hotels/subscriptions/subscriptions.module';
+import { AlbumsModule } from './hotels/albums/albums.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SubscriptionsModule } from './hotels/subscriptions/subscriptions.module
     RoomsModule,
     RoomTypesModule,
     SubscriptionsModule,
+    AlbumsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
