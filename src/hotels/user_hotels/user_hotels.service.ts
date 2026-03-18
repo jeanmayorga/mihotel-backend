@@ -7,15 +7,6 @@ export class UserHotelsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(userUuid: string) {
-    return this.prisma.users_hotels.findMany({
-      where: { user_uuid: userUuid },
-      include: {
-        hotels: true,
-      },
-    });
-  }
-
   async hasAccessToHotel(userUuid: string, hotelUuid: string) {
     return this.prisma.users_hotels.findFirst({
       where: { user_uuid: userUuid, hotel_uuid: hotelUuid },

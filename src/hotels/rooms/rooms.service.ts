@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { FilterRoomsDto } from './dto/filter-rooms.dto';
 
 @Injectable()
 export class RoomsService {
@@ -25,8 +26,8 @@ export class RoomsService {
 
   async findAll(
     hotelUuid: string,
-    sortBy: 'name' | 'created_at' | 'clean_status' = 'created_at',
-    sortOrder: 'asc' | 'desc' = 'desc',
+    sortBy: FilterRoomsDto['sortBy'] = 'created_at',
+    sortOrder: FilterRoomsDto['sortOrder'] = 'desc',
   ) {
     this.logger.log(`Fetching rooms for hotel ${hotelUuid}`);
     return this.prisma.hotels_rooms.findMany({
