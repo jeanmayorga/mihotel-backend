@@ -9,6 +9,6 @@ export class AppController {
   @Public()
   @Get('')
   main() {
-    return this.appService.getHello();
+    return this.appService.getHealth();
   }
 }

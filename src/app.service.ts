@@ -1,8 +1,17 @@
+// src/app.service.ts
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from './prisma/prisma.service';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getHealth(): Promise<{ status: string; db?: string }> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return { status: 'ok', db: 'ok' };
+    } catch {
+      return { status: 'error', db: 'error' };
+    }
   }
 }
