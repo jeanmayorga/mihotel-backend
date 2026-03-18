@@ -2,15 +2,17 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createClient } from '@supabase/supabase-js';
 import type { Request } from 'express';
-import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class MeAccessGuard implements CanActivate {
+  private readonly logger = new Logger(MeAccessGuard.name);
   private supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_ANON_KEY!,
@@ -44,6 +46,7 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token');
       }
 
+      this.logger.log(`User ${user.id} authenticated`);
       request.authUserUuid = user.id;
 
       return true;

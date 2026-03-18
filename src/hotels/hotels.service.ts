@@ -7,8 +7,11 @@ export class HotelsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async findAll() {
+    return this.prisma.hotels.findMany();
+  }
+
   async findOne(uuid: string) {
-    this.logger.log(`Fetching hotel ${uuid}`);
     const hotel = await this.prisma.hotels.findUnique({
       where: { uuid },
     });

@@ -18,8 +18,10 @@ export class HotelAccessGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { authUserUuid?: string }>();
 
-    const hotelUuid = request.params.hotelUuid as string;
     const authUserUuid = request.authUserUuid as string;
+    const hotelUuid = request.params.hotelUuid as string;
+
+    console.log({ authUserUuid, hotelUuid });
 
     if (!isUUID(hotelUuid)) {
       throw new BadRequestException('hotelUuid must be a valid UUID');

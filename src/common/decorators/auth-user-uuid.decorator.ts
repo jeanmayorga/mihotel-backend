@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-export const CurrentAuthUserUuid = createParamDecorator(
+export const AuthUserUuid = createParamDecorator(
   (data: undefined, ctx: ExecutionContext): string => {
     const request = ctx
       .switchToHttp()
