@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/cron/billing",
+      "path": "/v1/cron/billing",
       "schedule": "0 0 1 * *"
     }
   ]
