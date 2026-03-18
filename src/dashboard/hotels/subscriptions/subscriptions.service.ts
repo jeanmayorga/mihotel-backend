@@ -55,17 +55,16 @@ export class SubscriptionsService {
       throw new NotFoundException(`Plan ${dto.plan_uuid} not found`);
     }
 
+    const startAt = new Date();
     const nextBillingAt =
-      (plan.price ?? 0) > 0
-        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        : null;
+      (plan.price ?? 0) > 0 ? this.firstOfNextMonth(startAt) : null;
 
     return this.prisma.hotels_subscriptions.create({
       data: {
         hotel_uuid: hotelUuid,
         plan_uuid: dto.plan_uuid,
         status: 'active',
-        start_at: new Date(),
+        start_at: startAt,
         next_billing_at: nextBillingAt,
       },
       include: { hotels_plans: true },
@@ -90,9 +89,7 @@ export class SubscriptionsService {
     }
 
     const nextBillingAt =
-      (plan.price ?? 0) > 0
-        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        : null;
+      (plan.price ?? 0) > 0 ? this.firstOfNextMonth(new Date()) : null;
 
     return this.prisma.hotels_subscriptions.update({
       where: { uuid: subscription.uuid },
@@ -113,5 +110,9 @@ export class SubscriptionsService {
       where: { subscription_uuid: subscription.uuid },
       orderBy: { created_at: 'desc' },
     });
+  }
+
+  private firstOfNextMonth(date: Date): Date {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
   }
 }
