@@ -5,11 +5,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { PrismaService } from '../../prisma/prisma.service';
+import { UserHotelsService } from '../../hotels/user_hotels/user_hotels.service';
 
 @Injectable()
 export class HotelAccessGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userHotelsService: UserHotelsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
@@ -17,13 +17,14 @@ export class HotelAccessGuard implements CanActivate {
       .getRequest<Request & { authUserUuid?: string }>();
 
     const hotelUuid = request.params.hotelUuid as string;
-    const authUserUuid = request.authUserUuid;
+    const authUserUuid = request.authUserUuid as string;
 
-    const access = await this.prisma.users_hotels.findFirst({
-      where: { hotel_uuid: hotelUuid, user_uuid: authUserUuid },
-    });
+    const hasAccess = await this.userHotelsService.hasAccessToHotel(
+      authUserUuid,
+      hotelUuid,
+    );
 
-    if (!access) {
+    if (!hasAccess) {
       throw new ForbiddenException('You do not have access to this hotel');
     }
 

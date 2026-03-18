@@ -15,4 +15,10 @@ export class UserHotelsService {
       },
     });
   }
+
+  async hasAccessToHotel(userUuid: string, hotelUuid: string) {
+    return this.prisma.users_hotels.findFirst({
+      where: { user_uuid: userUuid, hotel_uuid: hotelUuid },
+    });
+  }
 }
