@@ -36,7 +36,7 @@ export class RoomsService {
         hotels_rooms_types: true,
         hotels_albums: {
           include: {
-            hotels_albums_photos: true,
+            hotels_albums_photos: { orderBy: { position: 'asc' } },
           },
         },
       },
@@ -51,6 +51,11 @@ export class RoomsService {
       include: {
         hotels_rooms_types: true,
         hotels_rooms_images: true,
+        hotels_albums: {
+          include: {
+            hotels_albums_photos: { orderBy: { position: 'asc' } },
+          },
+        },
       },
     });
 
