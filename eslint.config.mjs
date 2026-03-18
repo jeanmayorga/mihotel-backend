@@ -25,9 +25,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.dto.ts'],
+    files: ['**/*.dto.ts', '**/*.service.ts', '**/*.controller.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
   {

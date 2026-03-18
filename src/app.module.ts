@@ -7,6 +7,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { HotelsModule } from './hotels/hotels.module';
 import { RoomTypesModule } from './hotels/room-types/room-types.module';
 import { RoomsModule } from './hotels/rooms/rooms.module';
+import { SubscriptionsModule } from './hotels/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { RoomsModule } from './hotels/rooms/rooms.module';
     HotelsModule,
     RoomsModule,
     RoomTypesModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

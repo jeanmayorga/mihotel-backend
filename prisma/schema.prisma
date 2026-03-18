@@ -1086,15 +1086,29 @@ model hotels_rooms_types {
 }
 
 model hotels_subscriptions {
-  uuid            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hotel_uuid      String?       @db.Uuid
-  plan_uuid       String?       @db.Uuid
-  status          String?
-  start_at        DateTime?     @db.Timestamptz(6)
-  next_billing_at DateTime?     @db.Timestamptz(6)
-  created_at      DateTime      @default(now()) @db.Timestamptz(6)
-  hotels          hotels?       @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
-  hotels_plans    hotels_plans? @relation(fields: [plan_uuid], references: [uuid])
+  uuid                          String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid                    String?                         @db.Uuid
+  plan_uuid                     String?                         @db.Uuid
+  status                        String?
+  start_at                      DateTime?                       @db.Timestamptz(6)
+  next_billing_at               DateTime?                       @db.Timestamptz(6)
+  created_at                    DateTime                        @default(now()) @db.Timestamptz(6)
+  hotels                        hotels?                         @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  hotels_plans                  hotels_plans?                   @relation(fields: [plan_uuid], references: [uuid])
+  hotels_subscription_invoices  hotels_subscription_invoices[]
+
+  @@schema("public")
+}
+
+model hotels_subscription_invoices {
+  uuid                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_uuid    String?               @db.Uuid
+  amount               Decimal?              @db.Decimal
+  status               String?
+  billing_period_start DateTime?             @db.Timestamptz(6)
+  billing_period_end   DateTime?             @db.Timestamptz(6)
+  created_at           DateTime              @default(now()) @db.Timestamptz(6)
+  hotels_subscriptions hotels_subscriptions? @relation(fields: [subscription_uuid], references: [uuid], onDelete: Cascade)
 
   @@schema("public")
 }
