@@ -10,23 +10,15 @@ export class AuthController {
   async me(@CurrentAuthUserUuid() authUserUuid: string) {
     const user = await this.prisma.public_users.findUnique({
       where: { uuid: authUserUuid },
-      select: {
-        uuid: true,
-        email: true,
-        full_name: true,
-        picture: true,
-        phone: true,
-        role: true,
-        created_at: true,
+      include: {
         users_hotels: {
-          select: {
-            hotel_uuid: true,
-            role: true,
-            modules: true,
+          include: {
             hotels: {
               select: {
                 uuid: true,
                 title: true,
+                image: true,
+                created_at: true,
               },
             },
           },
