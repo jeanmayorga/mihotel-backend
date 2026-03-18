@@ -4,8 +4,8 @@ import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionsService } from './subscriptions.service';
 import { PlansController } from './plans/plans.controller';
 import { PlansService } from './plans/plans.service';
-import { BillingService } from './billing.service';
-import { BillingController } from './billing.controller';
+import { BillingService } from './billing/billing.service';
+import { BillingController } from './billing/billing.controller';
 
 @Module({
   imports: [UserHotelsModule],
