@@ -4,11 +4,18 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { HotelsModule } from './hotels/hotels.module';
 import { RoomTypesModule } from './hotels/room-types/room-types.module';
 import { RoomsModule } from './hotels/rooms/rooms.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, RoomsModule, RoomTypesModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    HotelsModule,
+    RoomsModule,
+    RoomTypesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
