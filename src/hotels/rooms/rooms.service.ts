@@ -50,7 +50,6 @@ export class RoomsService {
       where: { uuid, hotel_uuid: hotelUuid },
       include: {
         hotels_rooms_types: true,
-        hotels_rooms_images: true,
         hotels_albums: {
           include: {
             hotels_albums_photos: { orderBy: { position: 'asc' } },
