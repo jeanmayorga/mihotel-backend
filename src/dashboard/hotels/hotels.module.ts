@@ -6,6 +6,7 @@ import { RoomTypesModule } from './room-types/room-types.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { UserHotelsModule } from './user_hotels/user_hotels.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UserHotelsModule } from './user_hotels/user_hotels.module';
     RoomsModule,
     SubscriptionsModule,
     UserHotelsModule,
+    InvoicesModule,
   ],
   controllers: [HotelsController],
   providers: [HotelsService],
