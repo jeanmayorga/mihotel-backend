@@ -34,7 +34,7 @@ export class InvoicesController {
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 20);
     const orderBy = String(query.orderBy ?? 'created_at');
-    const order = String(query.order ?? 'desc');
+    const order = String(query.order ?? 'asc');
 
     return this.invoicesService.findAll({
       hotelUuid,

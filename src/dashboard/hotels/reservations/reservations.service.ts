@@ -33,10 +33,10 @@ export class ReservationsService {
       where: { hotel_uuid: hotelUuid },
       include: {
         rooms: {
-          include: { hotels_rooms: true },
+          include: { room: true },
           orderBy: { created_at: 'asc' },
         },
-        hotels_customers: true,
+        customer: true,
       },
       orderBy: { [orderBy]: order },
       skip: (page - 1) * limit,
@@ -52,10 +52,10 @@ export class ReservationsService {
       where: { uuid: reservationUuid, hotel_uuid: hotelUuid },
       include: {
         rooms: {
-          include: { hotels_rooms: true },
+          include: { room: true },
           orderBy: { created_at: 'asc' },
         },
-        hotels_customers: true,
+        customer: true,
         invoice: true,
       },
     });

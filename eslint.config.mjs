@@ -25,6 +25,8 @@ export default tseslint.config(
     },
   },
   {
+    // Nest/Prisma: delegate calls are often flagged despite passing `tsc`.
+    // Scripts are not included here so `no-unsafe-*` stays enabled for them.
     files: ['**/*.dto.ts', '**/*.service.ts', '**/*.controller.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -38,7 +40,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 );
