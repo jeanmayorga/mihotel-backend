@@ -105,6 +105,57 @@ export class ReservationsService {
     });
   }
 
+  async calendar(options: {
+    hotelUuid: string;
+    from: string;
+    to: string;
+    status?: string;
+  }) {
+    const { hotelUuid, from, to, status } = options;
+
+    // Todas las rooms del hotel
+    const rooms = await this.prisma.hotels_rooms.findMany({
+      where: { hotel_uuid: hotelUuid },
+      orderBy: { created_at: 'asc' },
+    });
+
+    if (rooms.length === 0) return { data: [] };
+
+    // Reservation rooms que se solapan con el rango de fechas
+    const reservationRooms =
+      await this.prisma.hotels_reservations_rooms_v2.findMany({
+        where: {
+          reservations: { hotel_uuid: hotelUuid },
+          check_in_date: { lte: new Date(to) },
+          check_out_date: { gte: new Date(from) },
+          ...(status && status !== 'all' ? { status } : {}),
+        },
+        include: {
+          reservations: {
+            include: { customer: true },
+          },
+        },
+        orderBy: { check_in_date: 'asc' },
+      });
+
+    // Agrupar por room
+    const roomsMap = new Map(
+      rooms.map((room) => [
+        room.uuid,
+        { ...room, reservations: [] as typeof reservationRooms },
+      ]),
+    );
+
+    for (const rr of reservationRooms) {
+      const room = roomsMap.get(rr.room_uuid);
+      if (room) {
+        room.reservations.push(rr);
+      }
+    }
+
+    return { data: Array.from(roomsMap.values()) };
+  }
+
   async remove(hotelUuid: string, reservationUuid: string) {
     this.logger.log(`Deleting reservation ${reservationUuid}`);
     await this.getReservationOrThrow(hotelUuid, reservationUuid);

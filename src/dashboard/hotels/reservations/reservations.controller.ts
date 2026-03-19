@@ -20,6 +20,7 @@ import { AuthUserUuid } from '../../../common/decorators/auth-user-uuid.decorato
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { GetReservationsQueryDto } from './dto/get-reservations-query.dto';
+import { GetCalendarQueryDto } from './dto/get-calendar-query.dto';
 
 @ApiTags('Dashboard / Reservations')
 @ApiBearerAuth()
@@ -45,6 +46,19 @@ export class ReservationsController {
       limit,
       orderBy,
       order,
+    });
+  }
+
+  @Get('calendar')
+  calendar(
+    @HotelUuid() hotelUuid: string,
+    @Query() query: GetCalendarQueryDto,
+  ) {
+    return this.reservationsService.calendar({
+      hotelUuid,
+      from: query.from,
+      to: query.to,
+      status: query.status,
     });
   }
 
