@@ -7,6 +7,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { UserHotelsModule } from './user_hotels/user_hotels.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { InvoicesModule } from './invoices/invoices.module';
     SubscriptionsModule,
     UserHotelsModule,
     InvoicesModule,
+    ReservationsModule,
   ],
   controllers: [HotelsController],
   providers: [HotelsService],
