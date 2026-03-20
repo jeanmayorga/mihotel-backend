@@ -26,7 +26,7 @@ export class CreatePaymentDto {
   @ApiProperty({ example: 'confirmed' })
   @IsString()
   @IsOptional()
-  @IsIn(['pending', 'confirmed', 'rejected', 'refunded'])
+  @IsIn(['pending', 'confirmed', 'rejected'])
   status: string;
 
   @ApiPropertyOptional()

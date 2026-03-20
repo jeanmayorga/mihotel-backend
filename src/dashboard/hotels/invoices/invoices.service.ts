@@ -105,8 +105,10 @@ export class InvoicesService {
           items: { orderBy: { position: 'asc' } },
           discounts: { orderBy: { created_at: 'asc' } },
           taxes: { orderBy: { created_at: 'asc' } },
-          payments: { orderBy: { paid_at: 'desc' } },
-          refunds: { orderBy: { created_at: 'desc' } },
+          payments: {
+            orderBy: { paid_at: 'desc' },
+            include: { refunds: { orderBy: { created_at: 'desc' } } },
+          },
           customer: true,
         },
         orderBy: { [orderBy]: order },
@@ -152,7 +154,6 @@ export class InvoicesService {
           orderBy: { paid_at: 'desc' },
           include: { refunds: { orderBy: { created_at: 'desc' } } },
         },
-        refunds: { orderBy: { created_at: 'desc' } },
         customer: true,
       },
     });
@@ -206,13 +207,13 @@ export class InvoicesService {
   private resolveInvoiceStatus(
     currentStatus: string | undefined,
     total: number,
-    netPayments: number,
+    totalPayments: number,
   ): string {
     const totalInCents = this.toCents(total);
-    const netPaymentsInCents = this.toCents(netPayments);
+    const totalPaymentsInCents = this.toCents(totalPayments);
 
     if (currentStatus === 'cancelled') return 'cancelled';
-    if (netPaymentsInCents >= totalInCents) return 'paid';
+    if (totalPaymentsInCents >= totalInCents) return 'paid';
     if (currentStatus === 'issued') return 'issued';
     return 'draft';
   }
@@ -240,7 +241,7 @@ export class InvoicesService {
           _sum: { amount: true },
         }),
         tx.hotels_invoices_payments_v2.aggregate({
-          where: { invoice_uuid: invoiceUuid },
+          where: { invoice_uuid: invoiceUuid, status: 'confirmed' },
           _sum: { amount: true },
         }),
         tx.hotels_invoices_refunds_v2.aggregate({
@@ -260,11 +261,10 @@ export class InvoicesService {
     const totalPayments = Number(paymentsAgg._sum.amount ?? 0);
     const totalRefunds = Number(refundsAgg._sum.amount ?? 0);
     const currentStatus = invoice?.status;
-    const netPayments = totalPayments - totalRefunds;
     const nextStatus = this.resolveInvoiceStatus(
       currentStatus,
       total,
-      netPayments,
+      totalPayments,
     );
 
     await tx.hotels_invoices_v2.update({

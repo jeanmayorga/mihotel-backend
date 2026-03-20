@@ -35,6 +35,12 @@ export class RefundsService {
       throw new NotFoundException(`Payment ${dto.payment_uuid} not found`);
     }
 
+    if (payment.status !== 'confirmed') {
+      throw new BadRequestException(
+        `Refund can only be created for payments in confirmed status`,
+      );
+    }
+
     const totalRefunded = payment.refunds.reduce(
       (sum, r) => sum + Number(r.amount),
       0,
