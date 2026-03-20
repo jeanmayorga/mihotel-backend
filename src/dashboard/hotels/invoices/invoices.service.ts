@@ -26,15 +26,56 @@ export class InvoicesService {
     limit: number;
     orderBy: string;
     order: string;
+    from?: string;
+    to?: string;
+    search?: string;
+    status?: string;
   }) {
-    const hotelUuid = options.hotelUuid;
-    const page = options.page;
-    const limit = options.limit;
-    const orderBy = options.orderBy;
-    const order = options.order;
+    const { hotelUuid, page, limit, orderBy, order, from, to, search, status } =
+      options;
+
+    const createdAt =
+      from || to
+        ? {
+            ...(from ? { gte: new Date(`${from}T00:00:00.000Z`) } : {}),
+            ...(to ? { lte: new Date(`${to}T23:59:59.999Z`) } : {}),
+          }
+        : undefined;
+
+    const searchTerm = search?.trim();
+    const statusFilter = status ? { status } : undefined;
 
     const invoices = await this.prisma.hotels_invoices_v2.findMany({
-      where: { hotel_uuid: hotelUuid },
+      where: {
+        hotel_uuid: hotelUuid,
+        ...(createdAt ? { created_at: createdAt } : {}),
+        ...statusFilter,
+        ...(searchTerm
+          ? {
+              OR: [
+                {
+                  invoice_number: {
+                    contains: searchTerm,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  notes: { contains: searchTerm, mode: 'insensitive' },
+                },
+                {
+                  items: {
+                    some: {
+                      description: {
+                        contains: searchTerm,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
       include: {
         items: { orderBy: { position: 'asc' } },
         discounts: { orderBy: { created_at: 'asc' } },

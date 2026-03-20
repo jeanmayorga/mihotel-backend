@@ -1,7 +1,13 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsPositive } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 
 export class GetInvoicesQueryDto {
   @ApiPropertyOptional({ default: 1 })
@@ -29,4 +35,26 @@ export class GetInvoicesQueryDto {
   @IsString()
   @IsIn(['asc', 'desc'])
   order?: string;
+
+  @ApiPropertyOptional({ example: '2026-03-16' })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @ApiPropertyOptional({ example: '2026-03-22' })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    enum: ['draft', 'issued', 'paid', 'refunded', 'cancelled'],
+  })
+  @IsOptional()
+  @IsIn(['draft', 'issued', 'paid', 'refunded', 'cancelled'])
+  status?: string;
 }

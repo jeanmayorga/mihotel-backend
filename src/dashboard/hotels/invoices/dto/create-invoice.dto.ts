@@ -14,10 +14,10 @@ export class CreateInvoiceDto {
 
   @ApiPropertyOptional({
     default: 'draft',
-    enum: ['draft', 'issued', 'paid', 'voided'],
+    enum: ['draft', 'issued', 'paid', 'refunded', 'cancelled'],
   })
   @IsOptional()
-  @IsIn(['draft', 'issued', 'paid', 'voided'])
+  @IsIn(['draft', 'issued', 'paid', 'refunded', 'cancelled'])
   status?: string;
 
   @ApiPropertyOptional()
