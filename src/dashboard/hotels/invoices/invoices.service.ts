@@ -241,7 +241,10 @@ export class InvoicesService {
           _sum: { amount: true },
         }),
         tx.hotels_invoices_payments_v2.aggregate({
-          where: { invoice_uuid: invoiceUuid, status: 'confirmed' },
+          where: {
+            invoice_uuid: invoiceUuid,
+            OR: [{ status: 'confirmed' }, { status: 'refunded' }],
+          },
           _sum: { amount: true },
         }),
         tx.hotels_invoices_refunds_v2.aggregate({

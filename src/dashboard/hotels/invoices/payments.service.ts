@@ -55,6 +55,7 @@ export class PaymentsService {
         where: { uuid: paymentUuid, invoice_uuid: invoiceUuid },
         data: {
           ...(dto.amount !== undefined && { amount: dto.amount }),
+          ...(dto.status !== undefined && { status: dto.status }),
           ...(dto.payment_method !== undefined && {
             payment_method: dto.payment_method,
           }),
