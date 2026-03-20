@@ -49,9 +49,7 @@ export class RefundsService {
 
     const newTotalRefunded = totalRefunded + dto.amount;
     const paymentStatus =
-      newTotalRefunded >= Number(payment.amount)
-        ? 'refunded'
-        : 'partially_refunded';
+      newTotalRefunded >= Number(payment.amount) ? 'refunded' : 'confirmed';
 
     return this.prisma.$transaction(async (tx) => {
       const refund = await tx.hotels_invoices_refunds_v2.create({
@@ -113,8 +111,6 @@ export class RefundsService {
       let paymentStatus = 'confirmed';
       if (totalRefunded >= Number(payment.amount)) {
         paymentStatus = 'refunded';
-      } else if (totalRefunded > 0) {
-        paymentStatus = 'partially_refunded';
       }
 
       await tx.hotels_invoices_payments_v2.update({
