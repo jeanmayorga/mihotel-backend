@@ -21,6 +21,7 @@ import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { GetReservationsQueryDto } from './dto/get-reservations-query.dto';
 import { GetCalendarQueryDto } from './dto/get-calendar-query.dto';
+import { presentReservationsCalendar } from './reservations-calendar.presenter';
 
 @ApiTags('Dashboard / Reservations')
 @ApiBearerAuth()
@@ -50,16 +51,18 @@ export class ReservationsController {
   }
 
   @Get('calendar')
-  calendar(
+  async calendar(
     @HotelUuid() hotelUuid: string,
     @Query() query: GetCalendarQueryDto,
   ) {
-    return this.reservationsService.calendar({
+    const response = await this.reservationsService.calendar({
       hotelUuid,
       from: query.from,
       to: query.to,
       status: query.status,
     });
+
+    return presentReservationsCalendar(response);
   }
 
   @Get(':reservationUuid')
