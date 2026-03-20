@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { FilterRoomsDto } from './dto/filter-rooms.dto';
+import { GetRoomsQueryDto } from './dto/get-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomsService } from './rooms.service';
 import { AuthRequiredGuard } from '../../../common/guards/auth-required.guard';
@@ -31,11 +31,21 @@ export class RoomsController {
   }
 
   @Get()
-  findAll(
-    @HotelUuid() hotelUuid: string,
-    @Query() { sortBy, sortOrder }: FilterRoomsDto,
-  ) {
-    return this.roomsService.findAll(hotelUuid, sortBy, sortOrder);
+  findAll(@HotelUuid() hotelUuid: string, @Query() query: GetRoomsQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const orderBy = String(query.orderBy ?? 'created_at');
+    const order = String(query.order ?? 'desc');
+    const search = query.search;
+
+    return this.roomsService.findAll({
+      hotelUuid,
+      page,
+      limit,
+      orderBy,
+      order,
+      search,
+    });
   }
 
   @Get(':uuid')

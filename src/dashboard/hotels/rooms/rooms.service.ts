@@ -2,7 +2,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { FilterRoomsDto } from './dto/filter-rooms.dto';
 
 @Injectable()
 export class RoomsService {
@@ -24,14 +23,22 @@ export class RoomsService {
     });
   }
 
-  async findAll(
-    hotelUuid: string,
-    sortBy: FilterRoomsDto['sortBy'] = 'created_at',
-    sortOrder: FilterRoomsDto['sortOrder'] = 'desc',
-  ) {
+  async findAll(options: {
+    hotelUuid: string;
+    page: number;
+    limit: number;
+    orderBy: string;
+    order: string;
+    search?: string;
+  }) {
+    const { hotelUuid, page, limit, orderBy, order, search = '' } = options;
     this.logger.log(`rooms-service -> findAll -> hotelUuid: ${hotelUuid}`);
-    return this.prisma.hotels_rooms.findMany({
-      where: { hotel_uuid: hotelUuid },
+
+    const rooms = await this.prisma.hotels_rooms.findMany({
+      where: {
+        hotel_uuid: hotelUuid,
+        name: { contains: search, mode: 'insensitive' },
+      },
       include: {
         hotels_rooms_types: true,
         hotels_albums: {
@@ -40,8 +47,13 @@ export class RoomsService {
           },
         },
       },
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: { [orderBy]: order },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    const hasMore = rooms.length === limit;
+
+    return { data: rooms, hasMore };
   }
 
   async findOne(hotelUuid: string, uuid: string) {
