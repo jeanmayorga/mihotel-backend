@@ -27,6 +27,7 @@ export class PaymentsService {
           invoice_uuid: invoiceUuid,
           amount: dto.amount,
           payment_method: dto.payment_method,
+          status: dto.status ?? 'confirmed',
           notes: dto.notes,
           paid_at: dto.paid_at ?? new Date(),
           created_by: authUserUuid,

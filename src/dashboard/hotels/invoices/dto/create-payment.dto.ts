@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export class CreatePaymentDto {
   @ApiPropertyOptional()
@@ -15,6 +22,12 @@ export class CreatePaymentDto {
   @ApiProperty({ example: 'cash' })
   @IsString()
   payment_method: string;
+
+  @ApiProperty({ example: 'confirmed' })
+  @IsString()
+  @IsOptional()
+  @IsIn(['pending', 'confirmed', 'rejected', 'refunded', 'partially_refunded'])
+  status: string;
 
   @ApiPropertyOptional()
   @IsOptional()

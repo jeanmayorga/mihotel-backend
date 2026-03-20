@@ -67,51 +67,75 @@ export class InvoicesService {
 
     const searchTerm = search?.trim();
     const statusFilter = status ? { status } : undefined;
-
-    const invoices = await this.prisma.hotels_invoices_v2.findMany({
-      where: {
-        hotel_uuid: hotelUuid,
-        ...(createdAt ? { created_at: createdAt } : {}),
-        ...statusFilter,
-        ...(searchTerm
-          ? {
-              OR: [
-                {
-                  invoice_number: {
-                    contains: searchTerm,
-                    mode: 'insensitive',
-                  },
+    const where = {
+      hotel_uuid: hotelUuid,
+      ...(createdAt ? { created_at: createdAt } : {}),
+      ...statusFilter,
+      ...(searchTerm
+        ? {
+            OR: [
+              {
+                invoice_number: {
+                  contains: searchTerm,
+                  mode: 'insensitive' as const,
                 },
-                {
-                  notes: { contains: searchTerm, mode: 'insensitive' },
-                },
-                {
-                  items: {
-                    some: {
-                      description: {
-                        contains: searchTerm,
-                        mode: 'insensitive',
-                      },
+              },
+              {
+                notes: { contains: searchTerm, mode: 'insensitive' as const },
+              },
+              {
+                items: {
+                  some: {
+                    description: {
+                      contains: searchTerm,
+                      mode: 'insensitive' as const,
                     },
                   },
                 },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        items: { orderBy: { position: 'asc' } },
-        discounts: { orderBy: { created_at: 'asc' } },
-        taxes: { orderBy: { created_at: 'asc' } },
-        payments: { orderBy: { paid_at: 'desc' } },
-      },
-      orderBy: { [orderBy]: order },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    const hasMore = invoices.length === limit;
+              },
+            ],
+          }
+        : {}),
+    };
 
-    return { data: invoices, hasMore };
+    const [invoices, totals] = await Promise.all([
+      this.prisma.hotels_invoices_v2.findMany({
+        where,
+        include: {
+          items: { orderBy: { position: 'asc' } },
+          discounts: { orderBy: { created_at: 'asc' } },
+          taxes: { orderBy: { created_at: 'asc' } },
+          payments: { orderBy: { paid_at: 'desc' } },
+          refunds: { orderBy: { created_at: 'desc' } },
+          customer: true,
+        },
+        orderBy: { [orderBy]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.hotels_invoices_v2.aggregate({
+        where,
+        _sum: {
+          total: true,
+          total_payments: true,
+          total_refunds: true,
+        },
+      }),
+    ]);
+
+    const hasMore = invoices.length === limit;
+    const totalAmount = Number(totals._sum.total ?? 0);
+    const totalPayments = Number(totals._sum.total_payments ?? 0);
+    const totalRefunds = Number(totals._sum.total_refunds ?? 0);
+    const totalBalance = totalAmount - totalPayments + totalRefunds;
+
+    return {
+      data: invoices,
+      hasMore,
+      totalAmount,
+      totalPayments,
+      totalBalance,
+    };
   }
 
   async findOne(options: { hotelUuid: string; invoiceUuid: string }) {
