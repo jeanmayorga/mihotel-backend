@@ -19,7 +19,7 @@ export class TaxesService {
     dto: CreateTaxDto,
   ) {
     this.logger.log(`Adding tax to invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const tax = await tx.hotels_invoices_taxes_v2.create({
@@ -43,7 +43,7 @@ export class TaxesService {
     dto: Partial<CreateTaxDto>,
   ) {
     this.logger.log(`Updating tax ${taxUuid} in invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const tax = await tx.hotels_invoices_taxes_v2.update({
@@ -64,7 +64,7 @@ export class TaxesService {
 
   async removeTax(hotelUuid: string, invoiceUuid: string, taxUuid: string) {
     this.logger.log(`Removing tax ${taxUuid} from invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.hotels_invoices_taxes_v2.delete({

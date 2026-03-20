@@ -52,9 +52,9 @@ export class GetInvoicesQueryDto {
   search?: string;
 
   @ApiPropertyOptional({
-    enum: ['draft', 'issued', 'paid', 'refunded', 'cancelled'],
+    enum: ['draft', 'issued', 'paid', 'cancelled'],
   })
   @IsOptional()
-  @IsIn(['draft', 'issued', 'paid', 'refunded', 'cancelled'])
+  @IsIn(['draft', 'issued', 'paid', 'cancelled'])
   status?: string;
 }

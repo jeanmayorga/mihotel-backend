@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { toUtcDateRange } from '../../../common/helpers/to-utc-date-range';
@@ -16,6 +21,18 @@ export class InvoicesService {
 
     if (!invoice) {
       throw new NotFoundException(`Invoice ${invoiceUuid} not found`);
+    }
+
+    return invoice;
+  }
+
+  async ensureInvoiceIsEditable(hotelUuid: string, invoiceUuid: string) {
+    const invoice = await this.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+
+    if (invoice.status === 'issued') {
+      throw new BadRequestException(
+        `Invoice ${invoiceUuid} cannot be modified because it is issued`,
+      );
     }
 
     return invoice;
@@ -137,7 +154,7 @@ export class InvoicesService {
   async update(hotelUuid: string, invoiceUuid: string, dto: CreateInvoiceDto) {
     this.logger.log(`Updating invoice ${invoiceUuid} for hotel ${hotelUuid}`);
 
-    await this.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.hotels_invoices_v2.update({
       where: { uuid: invoiceUuid },
@@ -156,7 +173,7 @@ export class InvoicesService {
 
   async remove(hotelUuid: string, invoiceUuid: string) {
     this.logger.log(`Deleting invoice ${invoiceUuid} for hotel ${hotelUuid}`);
-    await this.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
     await this.prisma.hotels_invoices_v2.delete({
       where: { uuid: invoiceUuid },
     });

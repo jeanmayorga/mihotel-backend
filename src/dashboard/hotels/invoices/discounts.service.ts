@@ -19,7 +19,7 @@ export class DiscountsService {
     dto: CreateDiscountDto,
   ) {
     this.logger.log(`Adding discount to invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const discount = await tx.hotels_invoices_discounts_v2.create({
@@ -45,7 +45,7 @@ export class DiscountsService {
     this.logger.log(
       `Updating discount ${discountUuid} in invoice ${invoiceUuid}`,
     );
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const discount = await tx.hotels_invoices_discounts_v2.update({
@@ -74,7 +74,7 @@ export class DiscountsService {
     this.logger.log(
       `Removing discount ${discountUuid} from invoice ${invoiceUuid}`,
     );
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.hotels_invoices_discounts_v2.delete({

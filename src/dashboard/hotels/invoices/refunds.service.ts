@@ -24,7 +24,7 @@ export class RefundsService {
     dto: CreateRefundDto,
   ) {
     this.logger.log(`Adding refund to invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     const payment = await this.prisma.hotels_invoices_payments_v2.findFirst({
       where: { uuid: dto.payment_uuid, invoice_uuid: invoiceUuid },
@@ -82,7 +82,7 @@ export class RefundsService {
     this.logger.log(
       `Removing refund ${refundUuid} from invoice ${invoiceUuid}`,
     );
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     const refund = await this.prisma.hotels_invoices_refunds_v2.findFirst({
       where: { uuid: refundUuid, invoice_uuid: invoiceUuid },

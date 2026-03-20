@@ -19,7 +19,7 @@ export class PaymentsService {
     dto: CreatePaymentDto,
   ) {
     this.logger.log(`Adding payment to invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const payment = await tx.hotels_invoices_payments_v2.create({
@@ -47,7 +47,7 @@ export class PaymentsService {
     this.logger.log(
       `Updating payment ${paymentUuid} in invoice ${invoiceUuid}`,
     );
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const payment = await tx.hotels_invoices_payments_v2.update({
@@ -78,7 +78,7 @@ export class PaymentsService {
     this.logger.log(
       `Removing payment ${paymentUuid} from invoice ${invoiceUuid}`,
     );
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.hotels_invoices_payments_v2.delete({

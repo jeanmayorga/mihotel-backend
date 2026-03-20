@@ -14,7 +14,7 @@ export class ItemsService {
 
   async addItem(hotelUuid: string, invoiceUuid: string, dto: CreateItemDto) {
     this.logger.log(`Adding item to invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       const itemCount = await tx.hotels_invoices_items_v2.count({
@@ -44,7 +44,7 @@ export class ItemsService {
     dto: Partial<CreateItemDto>,
   ) {
     this.logger.log(`Updating item ${itemUuid} in invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     const current = await this.prisma.hotels_invoices_items_v2.findFirst({
       where: { uuid: itemUuid, invoice_uuid: invoiceUuid },
@@ -78,7 +78,7 @@ export class ItemsService {
 
   async removeItem(hotelUuid: string, invoiceUuid: string, itemUuid: string) {
     this.logger.log(`Removing item ${itemUuid} from invoice ${invoiceUuid}`);
-    await this.invoicesService.getInvoiceOrThrow(hotelUuid, invoiceUuid);
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.hotels_invoices_items_v2.delete({
