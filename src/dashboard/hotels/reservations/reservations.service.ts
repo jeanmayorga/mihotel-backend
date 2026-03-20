@@ -26,13 +26,35 @@ export class ReservationsService {
     limit: number;
     orderBy: string;
     order: string;
+    status?: string;
+    roomUuid?: string;
+    customerUuid?: string;
   }) {
-    const { hotelUuid, page, limit, orderBy, order } = options;
+    const {
+      hotelUuid,
+      page,
+      limit,
+      orderBy,
+      order,
+      status,
+      roomUuid,
+      customerUuid,
+    } = options;
+    const roomsFilter = {
+      ...(status ? { status } : {}),
+      ...(roomUuid ? { room_uuid: roomUuid } : {}),
+    };
+    const hasRoomsFilter = Object.keys(roomsFilter).length > 0;
 
     const reservations = await this.prisma.hotels_reservations_v2.findMany({
-      where: { hotel_uuid: hotelUuid },
+      where: {
+        hotel_uuid: hotelUuid,
+        ...(customerUuid ? { customer_uuid: customerUuid } : {}),
+        ...(hasRoomsFilter ? { rooms: { some: roomsFilter } } : {}),
+      },
       include: {
         rooms: {
+          ...(hasRoomsFilter ? { where: roomsFilter } : {}),
           include: { room: true },
           orderBy: { created_at: 'asc' },
         },

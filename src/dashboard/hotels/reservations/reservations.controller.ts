@@ -36,8 +36,8 @@ export class ReservationsController {
     @HotelUuid() hotelUuid: string,
     @Query() query: GetReservationsQueryDto,
   ) {
-    const page = Number(query.page ?? 1);
-    const limit = Number(query.limit ?? 20);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
     const orderBy = String(query.orderBy ?? 'created_at');
     const order = String(query.order ?? 'desc');
 
@@ -47,6 +47,9 @@ export class ReservationsController {
       limit,
       orderBy,
       order,
+      status: query.status,
+      roomUuid: query.roomUuid,
+      customerUuid: query.customerUuid,
     });
   }
 
