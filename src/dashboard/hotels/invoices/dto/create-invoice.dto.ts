@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateInvoiceDto {
   @ApiPropertyOptional()
@@ -12,13 +12,13 @@ export class CreateInvoiceDto {
   @IsString()
   invoice_number?: string;
 
-  @ApiPropertyOptional({
-    default: 'draft',
-    enum: ['draft', 'issued', 'paid', 'cancelled'],
-  })
-  @IsOptional()
-  @IsIn(['draft', 'issued', 'paid', 'cancelled'])
-  status?: string;
+  // @ApiPropertyOptional({
+  //   default: 'draft',
+  //   enum: ['draft', 'issued', 'paid', 'cancelled'],
+  // })
+  // @IsOptional()
+  // @IsIn(['draft', 'issued', 'paid', 'cancelled'])
+  // status?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

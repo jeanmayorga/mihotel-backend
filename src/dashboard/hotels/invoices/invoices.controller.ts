@@ -93,4 +93,20 @@ export class InvoicesController {
   ) {
     return this.invoicesService.remove(hotelUuid, invoiceUuid);
   }
+
+  @Post(':invoiceUuid/cancel')
+  cancel(
+    @HotelUuid() hotelUuid: string,
+    @Param('invoiceUuid', ParseUUIDPipe) invoiceUuid: string,
+  ) {
+    return this.invoicesService.cancel(hotelUuid, invoiceUuid);
+  }
+
+  @Post(':invoiceUuid/reactivate')
+  reactivate(
+    @HotelUuid() hotelUuid: string,
+    @Param('invoiceUuid', ParseUUIDPipe) invoiceUuid: string,
+  ) {
+    return this.invoicesService.reactivate(hotelUuid, invoiceUuid);
+  }
 }

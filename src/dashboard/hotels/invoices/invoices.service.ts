@@ -169,7 +169,7 @@ export class InvoicesService {
         hotel_uuid: hotelUuid,
         customer_uuid: dto.customer_uuid,
         invoice_number: dto.invoice_number,
-        status: dto.status ?? 'draft',
+        // status: dto.status ?? 'draft',
         notes: dto.notes,
         created_by: authUserUuid,
       },
@@ -190,7 +190,7 @@ export class InvoicesService {
         ...(dto.invoice_number !== undefined && {
           invoice_number: dto.invoice_number,
         }),
-        ...(dto.status !== undefined && { status: dto.status }),
+        // ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
       },
     });
@@ -212,7 +212,6 @@ export class InvoicesService {
     const totalInCents = this.toCents(total);
     const totalPaymentsInCents = this.toCents(totalPayments);
 
-    if (currentStatus === 'cancelled') return 'cancelled';
     if (totalPaymentsInCents >= totalInCents) return 'paid';
     if (currentStatus === 'issued') return 'issued';
     return 'draft';
@@ -282,5 +281,20 @@ export class InvoicesService {
         status: nextStatus,
       },
     });
+  }
+
+  async cancel(hotelUuid: string, invoiceUuid: string) {
+    this.logger.log(`Cancelling invoice ${invoiceUuid} for hotel ${hotelUuid}`);
+    await this.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
+    await this.prisma.hotels_invoices_v2.update({
+      where: { uuid: invoiceUuid },
+      data: { status: 'cancelled' },
+    });
+  }
+
+  async reactivate(hotelUuid: string, invoiceUuid: string) {
+    this.logger.log(`Activating invoice ${invoiceUuid} for hotel ${hotelUuid}`);
+    await this.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
+    await this.recalculateInvoice(this.prisma, invoiceUuid);
   }
 }
