@@ -162,11 +162,29 @@ export class InvoicesService {
     });
   }
 
+  private resolveInvoiceStatus(
+    currentStatus: string | undefined,
+    total: number,
+    netPayments: number,
+  ): string {
+    const totalInCents = this.toCents(total);
+    const netPaymentsInCents = this.toCents(netPayments);
+
+    if (currentStatus === 'cancelled') return 'cancelled';
+    if (netPaymentsInCents >= totalInCents) return 'paid';
+    if (currentStatus === 'issued') return 'issued';
+    return 'draft';
+  }
+
+  private toCents(value: number): number {
+    return Math.round(value * 100);
+  }
+
   async recalculateInvoice(
     tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
     invoiceUuid: string,
   ) {
-    const [itemsAgg, discountsAgg, taxesAgg, paymentsAgg, refundsAgg] =
+    const [itemsAgg, discountsAgg, taxesAgg, paymentsAgg, refundsAgg, invoice] =
       await Promise.all([
         tx.hotels_invoices_items_v2.aggregate({
           where: { invoice_uuid: invoiceUuid },
@@ -181,12 +199,16 @@ export class InvoicesService {
           _sum: { amount: true },
         }),
         tx.hotels_invoices_payments_v2.aggregate({
-          where: { invoice_uuid: invoiceUuid, status: 'confirmed' },
+          where: { invoice_uuid: invoiceUuid },
           _sum: { amount: true },
         }),
         tx.hotels_invoices_refunds_v2.aggregate({
           where: { invoice_uuid: invoiceUuid },
           _sum: { amount: true },
+        }),
+        tx.hotels_invoices_v2.findUnique({
+          where: { uuid: invoiceUuid },
+          select: { status: true },
         }),
       ]);
 
@@ -196,6 +218,13 @@ export class InvoicesService {
     const total = totalItems - totalDiscounts + totalTaxes;
     const totalPayments = Number(paymentsAgg._sum.amount ?? 0);
     const totalRefunds = Number(refundsAgg._sum.amount ?? 0);
+    const currentStatus = invoice?.status;
+    const netPayments = totalPayments - totalRefunds;
+    const nextStatus = this.resolveInvoiceStatus(
+      currentStatus,
+      total,
+      netPayments,
+    );
 
     await tx.hotels_invoices_v2.update({
       where: { uuid: invoiceUuid },
@@ -206,6 +235,7 @@ export class InvoicesService {
         total,
         total_payments: totalPayments,
         total_refunds: totalRefunds,
+        status: nextStatus,
       },
     });
   }
