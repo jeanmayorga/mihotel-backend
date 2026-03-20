@@ -16,6 +16,7 @@ import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from '../../../common/guards/auth-required.guard';
 import { HotelRequiredGuard } from '../../../common/guards/hotel-required.guard';
 import { HotelUuid } from '../../../common/decorators/hotel-uuid.decorator';
+import { HotelTimezone } from '../../../common/decorators/hotel-timezone.decorator';
 import { AuthUserUuid } from '../../../common/decorators/auth-user-uuid.decorator';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -30,7 +31,11 @@ export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 
   @Get()
-  findAll(@HotelUuid() hotelUuid: string, @Query() query: GetInvoicesQueryDto) {
+  findAll(
+    @HotelUuid() hotelUuid: string,
+    @HotelTimezone() hotelTimezone: string,
+    @Query() query: GetInvoicesQueryDto,
+  ) {
     const page = Number(query.page ?? 1);
     // Si no se especifica 'limit', usamos el valor máximo posible para un número entero en Postgres (2^31 - 1).
     const limit = query.limit !== undefined ? Number(query.limit) : 2147483647;
@@ -43,6 +48,7 @@ export class InvoicesController {
 
     return this.invoicesService.findAll({
       hotelUuid,
+      timezone: hotelTimezone,
       page,
       limit,
       orderBy,

@@ -8,7 +8,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { isUUID } from 'class-validator';
 import { UserHotelsService } from '../../dashboard/hotels/user_hotels/user_hotels.service';
 
 @Injectable()
@@ -17,9 +16,13 @@ export class HotelRequiredGuard implements CanActivate {
   constructor(private readonly userHotelsService: UserHotelsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<Request & { authUserUuid?: string; hotelUuid?: string }>();
+    const request = context.switchToHttp().getRequest<
+      Request & {
+        authUserUuid?: string;
+        hotelUuid?: string;
+        hotelTimezone?: string;
+      }
+    >();
 
     const authUserUuid = request.authUserUuid as string;
     const hotelUuid = request.params.hotelUuid as string;
@@ -28,24 +31,26 @@ export class HotelRequiredGuard implements CanActivate {
       throw new UnauthorizedException('Invalid user uuid');
     }
 
-    if (!isUUID(hotelUuid)) {
+    if (!hotelUuid) {
       throw new BadRequestException('Invalid hotel uuid');
     }
 
-    const hasAccess = await this.userHotelsService.hasAccessToHotel(
-      authUserUuid,
-      hotelUuid,
+    const { hasAccess, timezone } =
+      await this.userHotelsService.getHotelContext(authUserUuid, hotelUuid);
+
+    if (!hasAccess) {
+      this.logger.log(
+        `hasAccess: false, authUserUuid: ${authUserUuid}, hotelUuid: ${hotelUuid}`,
+      );
+      throw new ForbiddenException('You do not have access to this hotel');
+    }
+
+    this.logger.log(
+      `hasAccess: true, authUserUuid: ${authUserUuid}, hotelUuid: ${hotelUuid}`,
     );
 
     request.hotelUuid = hotelUuid;
-
-    this.logger.log(
-      `hasAccess: ${hasAccess}, authUserUuid: ${authUserUuid}, hotelUuid: ${hotelUuid}`,
-    );
-
-    if (!hasAccess) {
-      throw new ForbiddenException('You do not have access to this hotel');
-    }
+    request.hotelTimezone = timezone;
 
     return true;
   }

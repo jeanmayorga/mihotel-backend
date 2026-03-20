@@ -23,6 +23,7 @@ export class InvoicesService {
 
   async findAll(options: {
     hotelUuid: string;
+    timezone: string;
     page: number;
     limit: number;
     orderBy: string;
@@ -32,15 +33,20 @@ export class InvoicesService {
     search?: string;
     status?: string;
   }) {
-    const { hotelUuid, page, limit, orderBy, order, from, to, search, status } =
-      options;
+    const {
+      hotelUuid,
+      timezone,
+      page,
+      limit,
+      orderBy,
+      order,
+      from,
+      to,
+      search,
+      status,
+    } = options;
 
-    const hotel = await this.prisma.hotels.findFirstOrThrow({
-      where: { uuid: hotelUuid },
-      select: { timezone: true },
-    });
-
-    const createdAt = toUtcDateRange(from, to, hotel.timezone);
+    const createdAt = toUtcDateRange(from, to, timezone);
 
     const searchTerm = search?.trim();
     const statusFilter = status ? { status } : undefined;

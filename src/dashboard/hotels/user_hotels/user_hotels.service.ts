@@ -7,10 +7,15 @@ export class UserHotelsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async hasAccessToHotel(userUuid: string, hotelUuid: string) {
+  async getHotelContext(userUuid: string, hotelUuid: string) {
     const userHotel = await this.prisma.users_hotels.findFirst({
       where: { user_uuid: userUuid, hotel_uuid: hotelUuid },
+      select: { hotels: { select: { timezone: true } } },
     });
-    return Boolean(userHotel);
+
+    const hasAccess = Boolean(userHotel);
+    const timezone = userHotel?.hotels?.timezone ?? 'America/Guayaquil';
+
+    return { hasAccess, timezone };
   }
 }
