@@ -541,6 +541,7 @@ model hotels {
   check_in_time                      DateTime                             @default(dbgenerated("'15:00:00'::time without time zone")) @db.Time(6)
   check_out_time                     DateTime                             @default(dbgenerated("'11:00:00'::time without time zone")) @db.Time(6)
   disabled                           Boolean                              @default(true)
+  timezone                           String                               @default("America/Guayaquil")
   businesses                         businesses[]
   hotels_albums                      hotels_albums[]
   hotels_comments                    hotels_comments[]

@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { toUtcDateRange } from '../../../common/helpers/to-utc-date-range';
 
 @Injectable()
 export class InvoicesService {
@@ -34,13 +35,12 @@ export class InvoicesService {
     const { hotelUuid, page, limit, orderBy, order, from, to, search, status } =
       options;
 
-    const createdAt =
-      from || to
-        ? {
-            ...(from ? { gte: new Date(`${from}T00:00:00.000Z`) } : {}),
-            ...(to ? { lte: new Date(`${to}T23:59:59.999Z`) } : {}),
-          }
-        : undefined;
+    const hotel = await this.prisma.hotels.findFirstOrThrow({
+      where: { uuid: hotelUuid },
+      select: { timezone: true },
+    });
+
+    const createdAt = toUtcDateRange(from, to, hotel.timezone);
 
     const searchTerm = search?.trim();
     const statusFilter = status ? { status } : undefined;

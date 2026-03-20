@@ -32,7 +32,8 @@ export class InvoicesController {
   @Get()
   findAll(@HotelUuid() hotelUuid: string, @Query() query: GetInvoicesQueryDto) {
     const page = Number(query.page ?? 1);
-    const limit = Number(query.limit ?? 20);
+    // Si no se especifica 'limit', usamos el valor máximo posible para un número entero en Postgres (2^31 - 1).
+    const limit = query.limit !== undefined ? Number(query.limit) : 2147483647;
     const orderBy = String(query.orderBy ?? 'created_at');
     const order = String(query.order ?? 'desc');
     const from = query.from;
