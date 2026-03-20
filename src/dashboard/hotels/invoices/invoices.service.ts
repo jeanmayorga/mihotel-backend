@@ -34,6 +34,11 @@ export class InvoicesService {
         `Invoice ${invoiceUuid} cannot be modified because it is issued`,
       );
     }
+    if (invoice.status === 'cancelled') {
+      throw new BadRequestException(
+        `Invoice ${invoiceUuid} cannot be modified because it is cancelled`,
+      );
+    }
 
     return invoice;
   }
@@ -294,7 +299,6 @@ export class InvoicesService {
 
   async reactivate(hotelUuid: string, invoiceUuid: string) {
     this.logger.log(`Activating invoice ${invoiceUuid} for hotel ${hotelUuid}`);
-    await this.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
     await this.recalculateInvoice(this.prisma, invoiceUuid);
   }
 }
