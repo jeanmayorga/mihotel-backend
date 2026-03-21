@@ -145,14 +145,18 @@ export class InvoicesService {
         total_payments: true,
         total_refunds: true,
       },
+      _count: true,
     });
 
+    const totalInvoices = Number(totals._count ?? 0);
     const totalAmount = Number(totals._sum?.total ?? 0);
     const totalPayments = Number(totals._sum?.total_payments ?? 0);
     const totalRefunds = Number(totals._sum?.total_refunds ?? 0);
     const totalBalance = totalAmount - totalPayments + totalRefunds;
 
-    return { data: { totalAmount, totalPayments, totalBalance } };
+    return {
+      data: { totalInvoices, totalAmount, totalPayments, totalBalance },
+    };
   }
 
   async findOne(options: { hotelUuid: string; invoiceUuid: string }) {
