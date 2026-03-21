@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import {
+  firstOfMonthInTimezone,
+  firstOfNextMonthInTimezone,
+} from '../../../../common/helpers/month-boundary';
 
 @Injectable()
 export class BillingService {
@@ -18,7 +22,10 @@ export class BillingService {
         next_billing_at: { not: null },
         hotels_plans: { price: { gt: 0 } },
       },
-      include: { hotels_plans: true },
+      include: {
+        hotels_plans: true,
+        hotels: { select: { timezone: true } },
+      },
     });
 
     this.logger.log(`Found ${subscriptions.length} subscriptions to bill`);
@@ -32,12 +39,19 @@ export class BillingService {
     let skipped = 0;
 
     for (const sub of subscriptions) {
+      const timezone = sub.hotels?.timezone ?? 'America/Guayaquil';
       let nextBillingAt = sub.next_billing_at!;
 
       // Catch-up: generate invoices for completed months only
       while (true) {
-        const billingPeriodStart = nextBillingAt;
-        const billingPeriodEnd = this.firstOfNextMonth(billingPeriodStart);
+        const billingPeriodStart = firstOfMonthInTimezone(
+          nextBillingAt,
+          timezone,
+        );
+        const billingPeriodEnd = firstOfNextMonthInTimezone(
+          nextBillingAt,
+          timezone,
+        );
 
         // Only bill if the period has fully ended
         if (billingPeriodEnd > now) break;
@@ -98,9 +112,5 @@ export class BillingService {
     );
 
     return { processed, failed, skipped, total: subscriptions.length };
-  }
-
-  private firstOfNextMonth(date: Date): Date {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
   }
 }

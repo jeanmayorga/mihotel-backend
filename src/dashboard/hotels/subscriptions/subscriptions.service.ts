@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { firstOfNextMonthInTimezone } from '../../../common/helpers/month-boundary';
 
 @Injectable()
 export class SubscriptionsService {
@@ -17,7 +18,7 @@ export class SubscriptionsService {
   private async getSubscription(hotelUuid: string) {
     const subscription = await this.prisma.hotels_subscriptions.findFirst({
       where: { hotel_uuid: hotelUuid },
-      include: { hotels_plans: true },
+      include: { hotels_plans: true, hotels: { select: { timezone: true } } },
     });
 
     if (!subscription) {
@@ -56,8 +57,20 @@ export class SubscriptionsService {
     }
 
     const startAt = new Date();
+    const hotel = await this.prisma.hotels.findUnique({
+      where: { uuid: hotelUuid },
+      select: { timezone: true },
+    });
+
+    if (!hotel) {
+      throw new NotFoundException(`Hotel ${hotelUuid} not found`);
+    }
+
+    const timezone = hotel.timezone ?? 'America/Guayaquil';
     const nextBillingAt =
-      (plan.price ?? 0) > 0 ? this.firstOfNextMonth(startAt) : null;
+      (plan.price ?? 0) > 0
+        ? firstOfNextMonthInTimezone(startAt, timezone)
+        : null;
 
     return this.prisma.hotels_subscriptions.create({
       data: {
@@ -88,8 +101,11 @@ export class SubscriptionsService {
       throw new NotFoundException(`Plan ${dto.plan_uuid} not found`);
     }
 
+    const timezone = subscription.hotels?.timezone ?? 'America/Guayaquil';
     const nextBillingAt =
-      (plan.price ?? 0) > 0 ? this.firstOfNextMonth(new Date()) : null;
+      (plan.price ?? 0) > 0
+        ? firstOfNextMonthInTimezone(new Date(), timezone)
+        : null;
 
     return this.prisma.hotels_subscriptions.update({
       where: { uuid: subscription.uuid },
@@ -97,7 +113,7 @@ export class SubscriptionsService {
         plan_uuid: dto.plan_uuid,
         next_billing_at: nextBillingAt,
       },
-      include: { hotels_plans: true },
+      include: { hotels_plans: true, hotels: { select: { timezone: true } } },
     });
   }
 
@@ -110,9 +126,5 @@ export class SubscriptionsService {
       where: { subscription_uuid: subscription.uuid },
       orderBy: { created_at: 'desc' },
     });
-  }
-
-  private firstOfNextMonth(date: Date): Date {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
   }
 }
