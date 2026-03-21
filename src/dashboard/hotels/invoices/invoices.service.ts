@@ -107,13 +107,13 @@ export class InvoicesService {
         ...createdAtFilter,
       },
       include: {
-        items: { orderBy: { position: 'asc' } },
-        discounts: { orderBy: { created_at: 'asc' } },
-        taxes: { orderBy: { created_at: 'asc' } },
-        payments: {
-          orderBy: { paid_at: 'desc' },
-          include: { refunds: { orderBy: { created_at: 'desc' } } },
-        },
+        // items: { orderBy: { position: 'asc' } },
+        // discounts: { orderBy: { created_at: 'asc' } },
+        // taxes: { orderBy: { created_at: 'asc' } },
+        // payments: {
+        //   orderBy: { paid_at: 'desc' },
+        //   include: { refunds: { orderBy: { created_at: 'desc' } } },
+        // },
         customer: true,
       },
       orderBy: { [orderBy]: order },
