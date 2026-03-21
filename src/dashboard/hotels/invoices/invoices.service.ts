@@ -71,78 +71,88 @@ export class InvoicesService {
     const createdAt = toUtcDateRange(from, to, timezone);
 
     const searchTerm = search?.trim();
-    const statusFilter = status ? { status } : undefined;
-    const where = {
-      hotel_uuid: hotelUuid,
-      ...(createdAt ? { created_at: createdAt } : {}),
-      ...statusFilter,
-      ...(searchTerm
-        ? {
-            OR: [
-              {
-                invoice_number: {
+    const parsedInvoiceNumber =
+      searchTerm && /^\d+$/.test(searchTerm) ? Number(searchTerm) : undefined;
+    const invoiceNumberFilter =
+      parsedInvoiceNumber !== undefined &&
+      Number.isSafeInteger(parsedInvoiceNumber)
+        ? [{ invoice_number: parsedInvoiceNumber }]
+        : [];
+    const searchFilter = searchTerm
+      ? {
+          OR: [
+            ...invoiceNumberFilter,
+            {
+              notes: { contains: searchTerm, mode: 'insensitive' as const },
+            },
+            {
+              customer: {
+                full_name: {
                   contains: searchTerm,
                   mode: 'insensitive' as const,
                 },
               },
-              {
-                notes: { contains: searchTerm, mode: 'insensitive' as const },
-              },
-              {
-                items: {
-                  some: {
-                    description: {
-                      contains: searchTerm,
-                      mode: 'insensitive' as const,
-                    },
-                  },
-                },
-              },
-            ],
-          }
-        : {}),
-    };
+            },
+          ],
+        }
+      : undefined;
+    const statusFilter = status ? { status } : undefined;
+    const createdAtFilter = createdAt ? { created_at: createdAt } : undefined;
 
-    const [invoices, totals] = await Promise.all([
-      this.prisma.hotels_invoices_v2.findMany({
-        where,
-        include: {
-          items: { orderBy: { position: 'asc' } },
-          discounts: { orderBy: { created_at: 'asc' } },
-          taxes: { orderBy: { created_at: 'asc' } },
-          payments: {
-            orderBy: { paid_at: 'desc' },
-            include: { refunds: { orderBy: { created_at: 'desc' } } },
-          },
-          customer: true,
+    const invoices = await this.prisma.hotels_invoices_v2.findMany({
+      where: {
+        hotel_uuid: hotelUuid,
+        ...searchFilter,
+        ...statusFilter,
+        ...createdAtFilter,
+      },
+      include: {
+        items: { orderBy: { position: 'asc' } },
+        discounts: { orderBy: { created_at: 'asc' } },
+        taxes: { orderBy: { created_at: 'asc' } },
+        payments: {
+          orderBy: { paid_at: 'desc' },
+          include: { refunds: { orderBy: { created_at: 'desc' } } },
         },
-        orderBy: { [orderBy]: order },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.hotels_invoices_v2.aggregate({
-        where,
-        _sum: {
-          total: true,
-          total_payments: true,
-          total_refunds: true,
-        },
-      }),
-    ]);
+        customer: true,
+      },
+      orderBy: { [orderBy]: order },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
     const hasMore = invoices.length === limit;
-    const totalAmount = Number(totals._sum.total ?? 0);
-    const totalPayments = Number(totals._sum.total_payments ?? 0);
-    const totalRefunds = Number(totals._sum.total_refunds ?? 0);
+    return { data: invoices, hasMore };
+  }
+
+  async getSummary(options: {
+    hotelUuid: string;
+    timezone: string;
+    from?: string;
+    to?: string;
+  }) {
+    const { hotelUuid, timezone, from, to } = options;
+    const createdAt = toUtcDateRange(from, to, timezone);
+    const createdAtFilter = createdAt ? { created_at: createdAt } : undefined;
+
+    const totals = await this.prisma.hotels_invoices_v2.aggregate({
+      where: {
+        hotel_uuid: hotelUuid,
+        ...createdAtFilter,
+      },
+      _sum: {
+        total: true,
+        total_payments: true,
+        total_refunds: true,
+      },
+    });
+
+    const totalAmount = Number(totals._sum?.total ?? 0);
+    const totalPayments = Number(totals._sum?.total_payments ?? 0);
+    const totalRefunds = Number(totals._sum?.total_refunds ?? 0);
     const totalBalance = totalAmount - totalPayments + totalRefunds;
 
-    return {
-      data: invoices,
-      hasMore,
-      totalAmount,
-      totalPayments,
-      totalBalance,
-    };
+    return { data: { totalAmount, totalPayments, totalBalance } };
   }
 
   async findOne(options: { hotelUuid: string; invoiceUuid: string }) {
@@ -173,7 +183,6 @@ export class InvoicesService {
       data: {
         hotel_uuid: hotelUuid,
         customer_uuid: dto.customer_uuid,
-        invoice_number: dto.invoice_number,
         // status: dto.status ?? 'draft',
         notes: dto.notes,
         created_by: authUserUuid,
@@ -191,9 +200,6 @@ export class InvoicesService {
       data: {
         ...(dto.customer_uuid !== undefined && {
           customer_uuid: dto.customer_uuid,
-        }),
-        ...(dto.invoice_number !== undefined && {
-          invoice_number: dto.invoice_number,
         }),
         // ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.notes !== undefined && { notes: dto.notes }),

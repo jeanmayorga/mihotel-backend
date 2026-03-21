@@ -375,7 +375,7 @@ async function migrateInvoices() {
         uuid: inv.uuid,
         hotel_uuid: hotelUuid,
         customer_uuid: inv.customer_uuid,
-        invoice_number: inv.invoice_number,
+        // invoice_number: invoiceNumber,
         status,
         total_items: totalItems,
         total_discounts: discountTotal,

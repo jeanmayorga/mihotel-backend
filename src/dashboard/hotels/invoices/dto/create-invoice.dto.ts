@@ -7,11 +7,6 @@ export class CreateInvoiceDto {
   @IsUUID()
   customer_uuid?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  invoice_number?: string;
-
   // @ApiPropertyOptional({
   //   default: 'draft',
   //   enum: ['draft', 'issued', 'paid', 'cancelled'],

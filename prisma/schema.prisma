@@ -806,7 +806,7 @@ model hotels_invoices_v2 {
   uuid                                       String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hotel_uuid                                 String                        @db.Uuid
   customer_uuid                              String?                       @db.Uuid
-  invoice_number                             String?
+  invoice_number                             Int                           @default(dbgenerated("nextval('hotels_invoices_v2_invoice_number_seq'::regclass)"))
   status                                     String                        @default("draft")
   total_items                                Decimal                       @default(0) @db.Decimal(10, 2)
   total_discounts                            Decimal                       @default(0) @db.Decimal(10, 2)
@@ -826,6 +826,7 @@ model hotels_invoices_v2 {
   users_hotels_invoices_v2_created_byTousers public_users?                 @relation("hotels_invoices_v2_created_byTousers", fields: [created_by], references: [uuid], onUpdate: NoAction)
   customer                                   hotels_customers?             @relation(fields: [customer_uuid], references: [uuid], onUpdate: NoAction)
   hotels                                     hotels                        @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([invoice_number], map: "ux_hotels_invoices_v2_invoice_number")
   @@index([customer_uuid], map: "idx_invoices_v2_customer")
   @@index([hotel_uuid], map: "idx_invoices_v2_hotel")
   @@index([hotel_uuid, status], map: "idx_invoices_v2_status")

@@ -59,6 +59,23 @@ export class InvoicesController {
     });
   }
 
+  @Get('summary')
+  getSummary(
+    @HotelUuid() hotelUuid: string,
+    @HotelTimezone() hotelTimezone: string,
+    @Query() query: GetInvoicesQueryDto,
+  ) {
+    const from = query.from;
+    const to = query.to;
+
+    return this.invoicesService.getSummary({
+      hotelUuid,
+      timezone: hotelTimezone,
+      from,
+      to,
+    });
+  }
+
   @Get(':invoiceUuid')
   findOne(
     @HotelUuid() hotelUuid: string,
