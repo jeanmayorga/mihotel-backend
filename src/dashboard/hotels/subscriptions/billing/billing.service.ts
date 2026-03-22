@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import {
-  firstOfMonthInTimezone,
-  firstOfNextMonthInTimezone,
-} from '../../../../common/helpers/month-boundary';
+  localDayOfMonth,
+  nextMonthlyBillingDate,
+} from '../../../../common/helpers/billing-cycle';
 
 @Injectable()
 export class BillingService {
@@ -19,7 +19,7 @@ export class BillingService {
     const subscriptions = await this.prisma.hotels_subscriptions.findMany({
       where: {
         status: 'active',
-        next_billing_at: { not: null },
+        next_billing_at: { lte: now },
         hotels_plans: { price: { gt: 0 } },
       },
       include: {
@@ -41,20 +41,18 @@ export class BillingService {
     for (const sub of subscriptions) {
       const timezone = sub.hotels?.timezone ?? 'America/Guayaquil';
       let nextBillingAt = sub.next_billing_at!;
+      const activePlanPrice = sub.hotels_plans!.price ?? 0;
+      const billingAnchorDay =
+        sub.billing_anchor_day ?? localDayOfMonth(nextBillingAt, timezone);
 
-      // Catch-up: generate invoices for completed months only
-      while (true) {
-        const billingPeriodStart = firstOfMonthInTimezone(
+      // Catch-up: generate invoices for every due cycle.
+      while (nextBillingAt <= now) {
+        const billingPeriodStart = nextBillingAt;
+        const billingPeriodEnd = nextMonthlyBillingDate(
           nextBillingAt,
           timezone,
+          billingAnchorDay,
         );
-        const billingPeriodEnd = firstOfNextMonthInTimezone(
-          nextBillingAt,
-          timezone,
-        );
-
-        // Only bill if the period has fully ended
-        if (billingPeriodEnd > now) break;
 
         try {
           const existingInvoice =
@@ -78,16 +76,24 @@ export class BillingService {
             await tx.hotels_subscription_invoices.create({
               data: {
                 subscription_uuid: sub.uuid,
-                amount: sub.hotels_plans!.price,
+                amount: activePlanPrice,
                 status: 'pending',
                 billing_period_start: billingPeriodStart,
                 billing_period_end: billingPeriodEnd,
               },
             });
 
+            const updateData: {
+              next_billing_at: Date | null;
+              billing_anchor_day?: number | null;
+            } = {
+              next_billing_at: billingPeriodEnd,
+              billing_anchor_day: billingAnchorDay,
+            };
+
             await tx.hotels_subscriptions.update({
               where: { uuid: sub.uuid },
-              data: { next_billing_at: billingPeriodEnd },
+              data: updateData,
             });
           });
 
