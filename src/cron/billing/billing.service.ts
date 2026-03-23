@@ -91,6 +91,8 @@ export class BillingService {
               data: {
                 subscription_uuid: sub.uuid,
                 amount: activePlanPrice,
+                plan_name: sub.plan!.name,
+                plan_amount: activePlanPrice,
                 status: 'pending',
                 billing_period_start: billingPeriodStart,
                 billing_period_end: billingPeriodEnd,

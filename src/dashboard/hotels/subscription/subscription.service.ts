@@ -91,6 +91,8 @@ export class SubscriptionService {
               data: {
                 subscription_uuid: subscription.uuid,
                 amount: nextPlanPrice,
+                plan_name: plan.name,
+                plan_amount: nextPlanPrice,
                 status: 'pending',
                 billing_period_start: cycleStart,
                 billing_period_end: nextBillingAt,

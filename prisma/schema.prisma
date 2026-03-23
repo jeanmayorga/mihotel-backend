@@ -1145,6 +1145,8 @@ model hotels_subscription_invoices {
   uuid                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscription_uuid    String?               @db.Uuid
   amount               Decimal?              @db.Decimal
+  plan_name            String?
+  plan_amount          Decimal?              @db.Decimal
   status               String?
   billing_period_start DateTime?             @db.Timestamptz(6)
   billing_period_end   DateTime?             @db.Timestamptz(6)
