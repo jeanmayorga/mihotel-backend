@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -10,7 +10,7 @@ import { HotelsService } from './hotels.service';
 import { AuthRequiredGuard } from '../../common/guards/auth-required.guard';
 import { AuthUserUuid } from '../../common/decorators/auth-user-uuid.decorator';
 import { HotelUuid } from '../../common/decorators/hotel-uuid.decorator';
-import { CreateFreHotelDto } from './hotels.dto';
+import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
 import { UserHotelsService } from './user_hotels/user_hotels.service';
 import { UserHotelRequiredGuard } from 'src/common/guards/user-hotel-required.guard';
 
@@ -55,6 +55,19 @@ export class HotelsController {
     @Body() dto: CreateFreHotelDto,
   ) {
     const hotel = await this.hotelsService.create(authUserUuid, dto);
+    return { data: hotel };
+  }
+
+  @Patch(':hotelUuid')
+  @ApiParam({ name: 'hotelUuid', type: String })
+  @UseGuards(UserHotelRequiredGuard)
+  @ApiOperation({ summary: 'Update hotel information' })
+  @ApiBody({ type: UpdateHotelDto })
+  async update(
+    @Param('hotelUuid') hotelUuid: string,
+    @Body() dto: UpdateHotelDto,
+  ) {
+    const hotel = await this.hotelsService.update(hotelUuid, dto);
     return { data: hotel };
   }
 

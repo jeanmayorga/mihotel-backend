@@ -48,6 +48,28 @@ async function main() {
   });
 
   console.log('Seeded plans: Free, Basic and Pro');
+
+  const ecuador = await prisma.countries.upsert({
+    where: { code: 'EC' },
+    update: { name: 'Ecuador', slug: 'ecuador' },
+    create: { name: 'Ecuador', code: 'EC', slug: 'ecuador' },
+  });
+
+  const cities = [
+    { name: 'Guayaquil', slug: 'guayaquil' },
+    { name: 'Quito', slug: 'quito' },
+    { name: 'Baños', slug: 'banos' },
+  ];
+
+  for (const city of cities) {
+    await prisma.cities.upsert({
+      where: { country_uuid_slug: { country_uuid: ecuador.uuid, slug: city.slug } },
+      update: { name: city.name },
+      create: { name: city.name, slug: city.slug, country_uuid: ecuador.uuid },
+    });
+  }
+
+  console.log('Seeded countries and cities: Ecuador (Guayaquil, Quito, Baños)');
 }
 
 main()
