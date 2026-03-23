@@ -7,6 +7,10 @@ export class PlansService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async findAll() {
+    return await this.prisma.hotels_plans.findMany();
+  }
+
   async findOneByCode(code: string) {
     const plan = await this.prisma.hotels_plans.findFirst({
       where: { code },

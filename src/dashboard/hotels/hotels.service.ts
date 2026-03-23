@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateFreHotelDto } from './hotels.dto';
-import { PlansService } from './plans/plans.service';
+import { PlansService } from 'src/plans/plans.service';
 import { startOfLocalDay } from 'src/common/helpers/billing-cycle';
 import slugify from 'slugify';
 

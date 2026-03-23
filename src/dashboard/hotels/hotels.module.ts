@@ -8,18 +8,18 @@ import { UserHotelsModule } from './user_hotels/user_hotels.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
-import { PlansModule } from './plans/plans.module';
+import { PlansModule } from 'src/plans/plans.module';
 
 @Module({
   imports: [
     AlbumsModule,
     InvoicesModule,
-    PlansModule,
     RoomTypesModule,
     RoomsModule,
     SubscriptionModule,
     UserHotelsModule,
     ReservationsModule,
+    PlansModule,
   ],
   controllers: [HotelsController],
   providers: [HotelsService],
