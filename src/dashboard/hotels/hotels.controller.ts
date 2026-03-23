@@ -14,10 +14,10 @@ import { CreateFreHotelDto } from './hotels.dto';
 import { UserHotelsService } from './user_hotels/user_hotels.service';
 import { UserHotelRequiredGuard } from 'src/common/guards/user-hotel-required.guard';
 
-@ApiTags('Dashboard / Hotels')
+@ApiTags('Dashboard / UserHotels')
 @ApiBearerAuth()
 @UseGuards(AuthRequiredGuard)
-@Controller('dashboard/hotels')
+@Controller('dashboard/user-hotels')
 export class HotelsController {
   constructor(
     private readonly hotelsService: HotelsService,
