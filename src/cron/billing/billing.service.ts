@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import {
   localDayOfMonth,
   nextMonthlyBillingDate,
-} from '../../../../common/helpers/billing-cycle';
+} from '../../common/helpers/billing-cycle';
 
 @Injectable()
 export class BillingService {
@@ -20,11 +20,11 @@ export class BillingService {
       where: {
         status: 'active',
         next_billing_at: { lte: now },
-        hotels_plans: { price: { gt: 0 } },
+        plan: { price: { gt: 0 } },
       },
       include: {
-        hotels_plans: true,
-        hotels: { select: { timezone: true } },
+        plan: true,
+        hotel: { select: { timezone: true } },
       },
     });
 
@@ -39,9 +39,9 @@ export class BillingService {
     let skipped = 0;
 
     for (const sub of subscriptions) {
-      const timezone = sub.hotels?.timezone ?? 'America/Guayaquil';
+      const timezone = sub.hotel?.timezone ?? 'America/Guayaquil';
       let nextBillingAt = sub.next_billing_at!;
-      const activePlanPrice = sub.hotels_plans!.price ?? 0;
+      const activePlanPrice = sub.plan!.price ?? 0;
       const billingAnchorDay =
         sub.billing_anchor_day ?? localDayOfMonth(nextBillingAt, timezone);
 

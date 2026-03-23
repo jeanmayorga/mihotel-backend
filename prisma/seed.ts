@@ -13,9 +13,10 @@ const PRO_PLAN_UUID = 'f2f81c47-6f7e-4df4-a20e-d15c8f4e6d4c';
 async function main() {
   await prisma.hotels_plans.upsert({
     where: { uuid: FREE_PLAN_UUID },
-    update: { name: 'Free', price: 0, billing_cycle: 'monthly' },
+    update: { code: 'free', name: 'Free', price: 0, billing_cycle: 'monthly' },
     create: {
       uuid: FREE_PLAN_UUID,
+      code: 'free',
       name: 'Free',
       price: 0,
       billing_cycle: 'monthly',
@@ -24,9 +25,10 @@ async function main() {
 
   await prisma.hotels_plans.upsert({
     where: { uuid: BASIC_PLAN_UUID },
-    update: { name: 'Basic', price: 30, billing_cycle: 'monthly' },
+    update: { code: 'basic', name: 'Basic', price: 30, billing_cycle: 'monthly' },
     create: {
       uuid: BASIC_PLAN_UUID,
+      code: 'basic',
       name: 'Basic',
       price: 30,
       billing_cycle: 'monthly',
@@ -35,9 +37,10 @@ async function main() {
 
   await prisma.hotels_plans.upsert({
     where: { uuid: PRO_PLAN_UUID },
-    update: { name: 'Pro', price: 80, billing_cycle: 'monthly' },
+    update: { code: 'pro', name: 'Pro', price: 80, billing_cycle: 'monthly' },
     create: {
       uuid: PRO_PLAN_UUID,
+      code: 'pro',
       name: 'Pro',
       price: 80,
       billing_cycle: 'monthly',

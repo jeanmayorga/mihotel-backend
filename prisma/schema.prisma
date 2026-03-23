@@ -559,7 +559,7 @@ model hotels {
   hotels_rooms_reservations_messages hotels_rooms_reservations_messages[]
   hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]
   hotels_rooms_types                 hotels_rooms_types[]
-  hotels_subscriptions               hotels_subscriptions[]
+  subscriptions                      hotels_subscriptions[]             @relation("HotelSubscriptions")
   hotels_visits                      hotels_visits[]
   hotels_whatsapp_messages           hotels_whatsapp_messages[]
   users_hotels                       users_hotels[]
@@ -877,6 +877,7 @@ model hotels_kitchen_products {
 
 model hotels_plans {
   uuid                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                 String?                @unique
   name                 String?
   price                Float?
   billing_cycle        String?
@@ -954,7 +955,7 @@ model hotels_reservations_rooms_v2 {
   cancelled_at             DateTime?                  @db.Timestamptz(6)
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
   reservations             hotels_reservations_v2     @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
-  room                     hotels_rooms               @relation(fields: [room_uuid], references: [uuid], onUpdate: NoAction)
+  room                     hotels_rooms               @relation(fields: [room_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([reservation_uuid, room_uuid])
   @@index([reservation_uuid], map: "idx_reservation_rooms_v2_reservation")
@@ -1088,7 +1089,7 @@ model hotels_rooms_reservations_messages {
   type                      String                     @default("sms")
   clicked_at                DateTime?                  @db.Timestamptz(6)
   hotels_customers          hotels_customers?          @relation(fields: [customer_uuid], references: [uuid], onDelete: Cascade, map: "hotels_messages_customer_uuid_fkey")
-  hotels                    hotels?                    @relation(fields: [hotel_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  hotels                    hotels?                    @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
   hotels_rooms_reservations hotels_rooms_reservations? @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade)
 
   @@id([uuid, sid])
@@ -1126,15 +1127,15 @@ model hotels_rooms_types {
 
 model hotels_subscriptions {
   uuid                          String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hotel_uuid                    String?                         @db.Uuid
+  hotel_uuid                    String?                         @unique @db.Uuid
   plan_uuid                     String?                         @db.Uuid
   billing_anchor_day            Int?
   status                        String?
   start_at                      DateTime?                       @db.Timestamptz(6)
   next_billing_at               DateTime?                       @db.Timestamptz(6)
   created_at                    DateTime                        @default(now()) @db.Timestamptz(6)
-  hotels                        hotels?                         @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
-  hotels_plans                  hotels_plans?                   @relation(fields: [plan_uuid], references: [uuid])
+  hotel                         hotels?                         @relation("HotelSubscriptions", fields: [hotel_uuid], references: [uuid], onDelete: Cascade)
+  plan                          hotels_plans?                   @relation(fields: [plan_uuid], references: [uuid])
   hotels_subscription_invoices  hotels_subscription_invoices[]
 
   @@schema("public")
@@ -1215,8 +1216,8 @@ model users_hotels {
   modules    String[]
   created_at DateTime      @default(now()) @db.Timestamptz(6)
   user_uuid  String?       @db.Uuid
-  hotels     hotels?       @relation(fields: [hotel_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
-  users      public_users? @relation(fields: [user_uuid], references: [uuid], onDelete: NoAction)
+  hotel     hotels?       @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  user      public_users? @relation(fields: [user_uuid], references: [uuid], onDelete: NoAction)
 
   @@schema("public")
 }

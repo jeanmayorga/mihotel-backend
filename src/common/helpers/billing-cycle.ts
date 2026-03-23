@@ -29,7 +29,7 @@ function daysInMonth(year: number, month: number): number {
 function shiftMonth(year: number, month: number, amount: number) {
   const absoluteMonth = month - 1 + amount;
   const nextYear = year + Math.floor(absoluteMonth / 12);
-  const nextMonth = ((absoluteMonth % 12) + 12) % 12 + 1;
+  const nextMonth = (((absoluteMonth % 12) + 12) % 12) + 1;
   return { year: nextYear, month: nextMonth };
 }
 

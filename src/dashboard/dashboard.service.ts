@@ -13,7 +13,15 @@ export class DashboardService {
       include: {
         users_hotels: {
           include: {
-            hotels: true,
+            hotel: {
+              include: {
+                subscriptions: {
+                  where: {
+                    status: 'active',
+                  },
+                },
+              },
+            },
           },
         },
       },
