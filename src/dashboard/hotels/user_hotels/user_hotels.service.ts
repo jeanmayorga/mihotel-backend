@@ -9,16 +9,43 @@ export class UserHotelsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAllByUserUuid(userUuid: string) {
-    return await this.prisma.users_hotels.findMany({
+    const userHotels = await this.prisma.users_hotels.findMany({
       where: { user_uuid: userUuid },
       include: {
         hotel: {
           include: {
-            subscriptions: true,
+            subscriptions: {
+              include: {
+                plan: true,
+                _count: {
+                  select: {
+                    hotels_subscription_invoices: {
+                      where: { status: 'pending' },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
+
+    return userHotels.map((userHotel) => ({
+      ...userHotel,
+      hotel: userHotel.hotel
+        ? {
+            ...userHotel.hotel,
+            subscriptions: userHotel.hotel.subscriptions.map((subscription) => {
+              const { _count, ...rest } = subscription;
+              return {
+                ...rest,
+                is_overdue: _count.hotels_subscription_invoices > 0,
+              };
+            }),
+          }
+        : null,
+    }));
   }
 
   async findAllByHotelUuid(hotelUuid: string) {
