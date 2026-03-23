@@ -41,11 +41,16 @@ export class BillingService {
 
     for (const sub of subscriptions) {
       const timezone = sub.hotel?.timezone ?? 'America/Guayaquil';
+      const initializedFromStartAt = sub.next_billing_at === null;
       let nextBillingAt =
         sub.next_billing_at ?? startOfLocalDay(sub.start_at ?? now, timezone);
       const activePlanPrice = sub.plan!.price;
       const billingAnchorDay =
         sub.billing_anchor_day ?? localDayOfMonth(nextBillingAt, timezone);
+
+      this.logger.log(
+        `Processing subscription ${sub.uuid} (plan: ${sub.plan!.name}, timezone: ${timezone})${initializedFromStartAt ? ' — initializing from start_at' : ''}`,
+      );
 
       // Catch-up: generate invoices for every due cycle.
       while (nextBillingAt <= now) {
@@ -92,17 +97,12 @@ export class BillingService {
               },
             });
 
-            const updateData: {
-              next_billing_at: Date | null;
-              billing_anchor_day?: number | null;
-            } = {
-              next_billing_at: billingPeriodEnd,
-              billing_anchor_day: billingAnchorDay,
-            };
-
             await tx.hotels_subscriptions.update({
               where: { uuid: sub.uuid },
-              data: updateData,
+              data: {
+                next_billing_at: billingPeriodEnd,
+                billing_anchor_day: billingAnchorDay,
+              },
             });
           });
 
