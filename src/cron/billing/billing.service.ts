@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   localDayOfMonth,
   nextMonthlyBillingDate,
+  startOfLocalDay,
 } from '../../common/helpers/billing-cycle';
 
 @Injectable()
@@ -19,8 +20,8 @@ export class BillingService {
     const subscriptions = await this.prisma.hotels_subscriptions.findMany({
       where: {
         status: 'active',
-        next_billing_at: { lte: now },
         plan: { price: { gt: 0 } },
+        OR: [{ next_billing_at: { lte: now } }, { next_billing_at: null }],
       },
       include: {
         plan: true,
@@ -40,8 +41,9 @@ export class BillingService {
 
     for (const sub of subscriptions) {
       const timezone = sub.hotel?.timezone ?? 'America/Guayaquil';
-      let nextBillingAt = sub.next_billing_at!;
-      const activePlanPrice = sub.plan!.price ?? 0;
+      let nextBillingAt =
+        sub.next_billing_at ?? startOfLocalDay(sub.start_at ?? now, timezone);
+      const activePlanPrice = sub.plan!.price;
       const billingAnchorDay =
         sub.billing_anchor_day ?? localDayOfMonth(nextBillingAt, timezone);
 
@@ -68,6 +70,13 @@ export class BillingService {
               `Invoice already exists for subscription ${sub.uuid}, period ${billingPeriodStart.toISOString()} — skipping`,
             );
             skipped++;
+            await this.prisma.hotels_subscriptions.update({
+              where: { uuid: sub.uuid },
+              data: {
+                next_billing_at: billingPeriodEnd,
+                billing_anchor_day: billingAnchorDay,
+              },
+            });
             nextBillingAt = billingPeriodEnd;
             continue;
           }

@@ -19,10 +19,25 @@ export class SubscriptionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findOne(subscriptionUuid: string) {
-    return await this.prisma.hotels_subscriptions.findUnique({
+    const subscription = await this.prisma.hotels_subscriptions.findUnique({
       where: { uuid: subscriptionUuid },
-      include: { plan: true },
+      include: {
+        plan: true,
+        _count: {
+          select: {
+            hotels_subscription_invoices: { where: { status: 'pending' } },
+          },
+        },
+      },
     });
+
+    if (!subscription) return null;
+
+    const { _count, ...rest } = subscription;
+    return {
+      ...rest,
+      is_overdue: _count.hotels_subscription_invoices > 0,
+    };
   }
 
   async change(subscriptionUuid: string, dto: UpdateSubscriptionDto) {
