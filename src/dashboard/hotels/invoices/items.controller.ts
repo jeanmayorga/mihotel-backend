@@ -16,6 +16,7 @@ import { HotelRequiredGuard } from '../../../common/guards/hotel-required.guard'
 import { HotelUuid } from '../../../common/decorators/hotel-uuid.decorator';
 import { ItemsService } from './items.service';
 import { CreateItemDto } from './dto/create-item.dto';
+import { AddItemFromProductDto } from './dto/add-item-from-product.dto';
 
 @ApiTags('Dashboard / Invoice Items')
 @ApiBearerAuth()
@@ -32,6 +33,15 @@ export class ItemsController {
     @Body() dto: CreateItemDto,
   ) {
     return this.itemsService.addItem(hotelUuid, invoiceUuid, dto);
+  }
+
+  @Post('from-product')
+  addItemFromProduct(
+    @HotelUuid() hotelUuid: string,
+    @Param('invoiceUuid', ParseUUIDPipe) invoiceUuid: string,
+    @Body() dto: AddItemFromProductDto,
+  ) {
+    return this.itemsService.addItemFromProduct(hotelUuid, invoiceUuid, dto);
   }
 
   @Patch(':itemUuid')

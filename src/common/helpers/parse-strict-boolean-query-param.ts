@@ -20,4 +20,3 @@ export function parseStrictBooleanQueryParam(value: unknown): unknown {
 
   return value;
 }
-

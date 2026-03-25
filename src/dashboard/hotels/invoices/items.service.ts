@@ -1,7 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { InvoicesService } from './invoices.service';
+import { AddItemFromProductDto } from './dto/add-item-from-product.dto';
 
 @Injectable()
 export class ItemsService {
@@ -29,6 +35,54 @@ export class ItemsService {
           unit_price: dto.unit_price,
           total: (dto.quantity ?? 1) * dto.unit_price,
           position: dto.position ?? itemCount,
+        },
+      });
+
+      await this.invoicesService.recalculateInvoice(tx, invoiceUuid);
+      return item;
+    });
+  }
+
+  async addItemFromProduct(
+    hotelUuid: string,
+    invoiceUuid: string,
+    dto: AddItemFromProductDto,
+  ) {
+    this.logger.log(
+      `Adding product item ${dto.product_uuid} to invoice ${invoiceUuid}`,
+    );
+    await this.invoicesService.ensureInvoiceIsEditable(hotelUuid, invoiceUuid);
+
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.hotels_products.findFirst({
+        where: { uuid: dto.product_uuid, hotel_uuid: hotelUuid },
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product ${dto.product_uuid} not found`);
+      }
+
+      if (!product.is_active) {
+        throw new BadRequestException(
+          `Product ${dto.product_uuid} is inactive and cannot be sold`,
+        );
+      }
+
+      const itemCount = await tx.hotels_invoices_items_v2.count({
+        where: { invoice_uuid: invoiceUuid },
+      });
+
+      const quantity = dto.quantity ?? 1;
+      const unitPrice = dto.unit_price ?? Number(product.price);
+
+      const item = await tx.hotels_invoices_items_v2.create({
+        data: {
+          invoice_uuid: invoiceUuid,
+          description: dto.description ?? product.name,
+          quantity,
+          unit_price: unitPrice,
+          total: quantity * unitPrice,
+          position: itemCount,
         },
       });
 

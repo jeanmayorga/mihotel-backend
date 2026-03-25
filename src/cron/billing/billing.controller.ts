@@ -10,14 +10,14 @@ export class BillingController {
   @ApiOperation({ summary: 'Process monthly billing' })
   @Get('billing')
   async processMonthlyBillingGet(
-    @Headers('authorization') authorization: string | undefined,
+    @Headers('authorization') authorization?: string,
   ) {
-    // if (
-    //   !process.env.CRON_SECRET ||
-    //   authorization !== `Bearer ${process.env.CRON_SECRET}`
-    // ) {
-    //   throw new ForbiddenException('Invalid cron secret');
-    // }
+    if (
+      !process.env.CRON_SECRET ||
+      authorization !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
+      throw new ForbiddenException('Invalid cron secret');
+    }
 
     return this.billingService.processMonthlyBilling();
   }

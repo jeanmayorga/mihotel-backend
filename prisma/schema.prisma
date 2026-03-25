@@ -592,12 +592,29 @@ model hotels {
   hotels_rooms_reservations_messages hotels_rooms_reservations_messages[]
   hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]
   hotels_rooms_types                 hotels_rooms_types[]
+  hotels_products                    hotels_products[]
   subscriptions                      hotels_subscriptions[]             @relation("HotelSubscriptions")
   hotels_visits                      hotels_visits[]
   hotels_whatsapp_messages           hotels_whatsapp_messages[]
   users_hotels                       users_hotels[]
 
   @@unique([city_uuid, slug])
+  @@schema("public")
+}
+
+model hotels_products {
+  uuid        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid  String   @db.Uuid
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+  hotels      hotels   @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([hotel_uuid], map: "idx_hotels_products_hotel")
+  @@index([hotel_uuid, is_active], map: "idx_hotels_products_hotel_active")
   @@schema("public")
 }
 
