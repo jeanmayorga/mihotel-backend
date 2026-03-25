@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateFreHotelDto {
   @ApiProperty()
@@ -22,9 +28,19 @@ export class CreateFreHotelDto {
 
 export class UpdateHotelDto {
   @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  disabled?: boolean;
+
+  @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   name?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  slug?: string;
 
   @ApiPropertyOptional()
   @IsString()

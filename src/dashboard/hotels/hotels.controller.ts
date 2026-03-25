@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -11,40 +20,38 @@ import { AuthRequiredGuard } from '../../common/guards/auth-required.guard';
 import { AuthUserUuid } from '../../common/decorators/auth-user-uuid.decorator';
 import { HotelUuid } from '../../common/decorators/hotel-uuid.decorator';
 import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
-import { UserHotelsService } from './user_hotels/user_hotels.service';
 import { UserHotelRequiredGuard } from 'src/common/guards/user-hotel-required.guard';
 
-@ApiTags('Dashboard / UserHotels')
+@ApiTags('Dashboard / Hotels')
 @ApiBearerAuth()
 @UseGuards(AuthRequiredGuard)
-@Controller('dashboard/user-hotels')
+@Controller('dashboard/hotels')
 export class HotelsController {
-  constructor(
-    private readonly hotelsService: HotelsService,
-    private readonly userHotelsService: UserHotelsService,
-  ) {}
+  constructor(private readonly hotelsService: HotelsService) {}
+
+  @Post('check-slug')
+  @ApiOperation({ summary: 'Check if a slug is available for a given city' })
+  async checkSlug(
+    @Body('slug') slug: string,
+    @Body('city_uuid') cityUuid: string,
+  ) {
+    const result = await this.hotelsService.validateSlug(slug, cityUuid);
+    return { data: result };
+  }
 
   @Get()
   async findAll(@AuthUserUuid() authUserUuid: string) {
-    const userHotels =
-      await this.userHotelsService.findAllByUserUuid(authUserUuid);
+    const hotels = await this.hotelsService.findAllByUserUuid(authUserUuid);
 
-    return { data: userHotels };
+    return { data: hotels };
   }
 
   @Get(':hotelUuid')
   @ApiParam({ name: 'hotelUuid', type: String })
   @UseGuards(UserHotelRequiredGuard)
-  async findOne(
-    @HotelUuid() hotelUuid: string,
-    @AuthUserUuid() authUserUuid: string,
-  ) {
-    const userHotel =
-      await this.userHotelsService.findOneActiveWithSubscription(
-        authUserUuid,
-        hotelUuid,
-      );
-    return { data: userHotel };
+  async findOne(@HotelUuid() hotelUuid: string) {
+    const hotel = await this.hotelsService.findOne(hotelUuid);
+    return { data: hotel };
   }
 
   @ApiOperation({ summary: 'Create a new hotel' })

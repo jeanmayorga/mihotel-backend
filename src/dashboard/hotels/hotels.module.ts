@@ -9,6 +9,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { PlansModule } from 'src/plans/plans.module';
+import { ServicesModule } from './services/services.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PlansModule } from 'src/plans/plans.module';
     UserHotelsModule,
     ReservationsModule,
     PlansModule,
+    ServicesModule,
   ],
   controllers: [HotelsController],
   providers: [HotelsService],

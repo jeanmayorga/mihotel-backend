@@ -1,9 +1,25 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '../../../generated/prisma/client';
 import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
 import { PlansService } from 'src/plans/plans.service';
 import { startOfLocalDay } from 'src/common/helpers/billing-cycle';
 import slugify from 'slugify';
+
+type MinSubscription = Prisma.hotels_subscriptionsGetPayload<{
+  include: {
+    plan: true;
+    _count: { select: { hotels_subscription_invoices: true } };
+  };
+}>;
+
+type Hotel = Prisma.hotelsGetPayload<{
+  include: {
+    users_hotels: true;
+  };
+}> & {
+  subscriptions: MinSubscription[];
+};
 
 @Injectable()
 export class HotelsService {
@@ -13,6 +29,34 @@ export class HotelsService {
     private readonly prisma: PrismaService,
     private readonly plansService: PlansService,
   ) {}
+
+  private readonly subscriptionsInclude = {
+    include: {
+      plan: true,
+      _count: {
+        select: {
+          hotels_subscription_invoices: {
+            where: { status: 'pending' },
+          },
+        },
+      },
+    },
+  } as const;
+
+  private formatSubscription(subscription: MinSubscription | undefined) {
+    if (!subscription) return null;
+    const { _count, ...rest } = subscription;
+    const is_overdue = _count.hotels_subscription_invoices > 0;
+    return { ...rest, is_overdue };
+  }
+
+  private formatHotel(hotel: Hotel) {
+    const { subscriptions, ...rest } = hotel;
+    return {
+      ...rest,
+      subscription: this.formatSubscription(subscriptions[0]),
+    };
+  }
 
   private async generateUniqueSlug(
     tx: any,
@@ -39,6 +83,33 @@ export class HotelsService {
     return slug;
   }
 
+  async findAllByUserUuid(userUuid: string) {
+    const hotels = await this.prisma.hotels.findMany({
+      where: { users_hotels: { some: { user_uuid: userUuid } } },
+      include: {
+        users_hotels: true,
+        subscriptions: this.subscriptionsInclude,
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
+    return hotels.map((hotel) => this.formatHotel(hotel));
+  }
+
+  async findOne(hotelUuid: string) {
+    const hotel = await this.prisma.hotels.findUnique({
+      where: { uuid: hotelUuid },
+      include: {
+        users_hotels: true,
+        subscriptions: this.subscriptionsInclude,
+      },
+    });
+
+    if (!hotel) return hotel;
+
+    return this.formatHotel(hotel);
+  }
+
   async create(authUserUuid: string, dto: CreateFreHotelDto) {
     const hotel = await this.prisma.$transaction(async (tx) => {
       const city = await tx.cities.findUnique({
@@ -61,7 +132,6 @@ export class HotelsService {
       const hotel = await tx.hotels.create({
         data: {
           name,
-          title: name,
           slug,
           country_uuid: dto.country_uuid,
           city_uuid: dto.city_uuid,
@@ -97,61 +167,24 @@ export class HotelsService {
   }
 
   async update(hotelUuid: string, dto: UpdateHotelDto) {
-    const hotel = await this.prisma.hotels.findUnique({
-      where: { uuid: hotelUuid },
-      select: { city_uuid: true, country_uuid: true },
-    });
-
-    if (!hotel) {
-      throw new BadRequestException('Hotel not found');
-    }
-
-    const cityUuid = dto.city_uuid ?? hotel.city_uuid ?? undefined;
-    let countryUuid = dto.country_uuid ?? hotel.country_uuid ?? undefined;
-
-    if (dto.city_uuid) {
-      const city = await this.prisma.cities.findUnique({
-        where: { uuid: dto.city_uuid },
+    return this.prisma.$transaction(async (tx) => {
+      const hotel = await tx.hotels.findUnique({
+        where: { uuid: hotelUuid },
+        select: { uuid: true },
       });
 
-      if (!city) {
-        throw new BadRequestException('City not found');
+      if (!hotel) {
+        throw new BadRequestException('Hotel not found');
       }
 
-      if (dto.country_uuid && city.country_uuid !== dto.country_uuid) {
-        throw new BadRequestException(
-          'City does not belong to the selected country',
-        );
-      }
-
-      if (!dto.country_uuid) {
-        countryUuid = city.country_uuid;
-      }
-    }
-
-    if (dto.country_uuid && !dto.city_uuid && hotel.city_uuid) {
-      const city = await this.prisma.cities.findUnique({
-        where: { uuid: hotel.city_uuid },
+      return tx.hotels.update({
+        where: { uuid: hotelUuid },
+        data: dto,
+        include: {
+          users_hotels: true,
+          subscriptions: true,
+        },
       });
-
-      if (!city) {
-        throw new BadRequestException('City not found');
-      }
-
-      if (city.country_uuid !== dto.country_uuid) {
-        throw new BadRequestException(
-          'Current city does not belong to the selected country. Update city_uuid too.',
-        );
-      }
-    }
-
-    return this.prisma.hotels.update({
-      where: { uuid: hotelUuid },
-      data: {
-        ...dto,
-        city_uuid: cityUuid,
-        country_uuid: countryUuid,
-      },
     });
   }
 
@@ -159,5 +192,41 @@ export class HotelsService {
     await this.prisma.hotels.delete({
       where: { uuid: hotelUuid },
     });
+  }
+
+  async validateSlug(
+    slug: string,
+    cityUuid: string,
+  ): Promise<{ is_valid: boolean; suggested_slug: string | null }> {
+    const base = slugify(slug, {
+      replacement: '-',
+      lower: true,
+      strict: true,
+      locale: 'en',
+      trim: true,
+    });
+    console.log('HERE', slug, base, slug !== base);
+    if (slug !== base) {
+      return { is_valid: false, suggested_slug: base };
+    }
+
+    const taken = await this.prisma.hotels.findFirst({
+      where: { slug, city_uuid: cityUuid },
+    });
+    if (!taken) {
+      return { is_valid: true, suggested_slug: null };
+    }
+
+    let counter = 1;
+    let suggested_slug: string;
+    do {
+      suggested_slug = `${slug}-${++counter}`;
+    } while (
+      await this.prisma.hotels.findFirst({
+        where: { slug: suggested_slug, city_uuid: cityUuid },
+      })
+    );
+
+    return { is_valid: false, suggested_slug };
   }
 }

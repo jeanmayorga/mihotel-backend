@@ -32,14 +32,14 @@ export class GetHotelsQueryDto {
   limit?: number;
 
   @ApiPropertyOptional({
-    example: 'title',
-    enum: ['title', 'created_at', 'disabled'],
+    example: 'name',
+    enum: ['name', 'created_at', 'disabled'],
   })
   @Type(() => String)
   @IsOptional()
   @IsString()
-  @IsEnum(['title', 'created_at', 'disabled'])
-  sortBy?: 'title' | 'created_at' | 'disabled';
+  @IsEnum(['name', 'created_at', 'disabled'])
+  sortBy?: 'name' | 'created_at' | 'disabled';
 
   @ApiPropertyOptional({ example: 'asc', enum: ['asc', 'desc'] })
   @Type(() => String)
