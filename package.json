@@ -6,7 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "bun run prisma:generate",
+    "prisma:generate": "bun --bun prisma generate",
+    "prisma:migrate": "bun --bun prisma migrate deploy",
     "migrate:subscription-billing-timezones": "bun run scripts/migrate-subscription-billing-timezones.ts",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

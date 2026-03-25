@@ -10,9 +10,11 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { PlansModule } from 'src/plans/plans.module';
 import { ProductsModule } from './products/products.module';
+import { AccountsModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
+    AccountsModule,
     AlbumsModule,
     InvoicesModule,
     RoomTypesModule,
