@@ -8,16 +8,18 @@ import { CronModule } from './modules/cron/cron.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { CountriesModule } from './modules/countries/countries.module';
 import { HealthModule } from './modules/health/health.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    PrismaModule,
-    SupabaseModule,
     CountriesModule,
     CronModule,
     DashboardModule,
     HealthModule,
     PlansModule,
+    PrismaModule,
+    SupabaseModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [UserHotelsService],

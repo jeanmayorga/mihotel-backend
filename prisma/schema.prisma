@@ -1238,7 +1238,7 @@ model public_users {
   uuid                                                    String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   picture                                                 String?
   full_name                                               String?
-  email                                                   String                        @default("")
+  email                                                   String                        @default("") @unique(map: "users_email_unique", where: raw("(email <> '')"))
   phone_country_code                                      String?
   phone                                                   String?
   created_at                                              DateTime                      @default(now()) @db.Timestamptz(6)
@@ -1282,6 +1282,7 @@ model hotel_accounts {
   hotel_uuid  String           @db.Uuid
   user_uuid   String           @db.Uuid
   role        HotelAccountRole @default(staff)
+  status      String           @default("pending")
   permissions String[]         @default([])
   created_at DateTime  @default(now()) @db.Timestamptz(6)
 

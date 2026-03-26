@@ -12,6 +12,16 @@ import {
 export class CreateAccountDto {
   @ApiPropertyOptional({ type: String })
   @IsString()
+  @IsNotEmpty()
+  full_name: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsString()
+  @IsOptional()
+  picture?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsString()
   @IsEmail()
   email: string;
 
@@ -37,6 +47,16 @@ export class CreateAccountDto {
 
 export class UpdateAccountDto {
   @ApiPropertyOptional({ type: String })
+  @IsString()
+  @IsOptional()
+  full_name?: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsString()
+  @IsOptional()
+  picture?: string;
+
+  @ApiPropertyOptional({ type: String })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -52,4 +72,9 @@ export class UpdateAccountDto {
   @IsArray()
   @IsString({ each: true })
   permissions?: string[];
+
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

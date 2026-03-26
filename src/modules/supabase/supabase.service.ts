@@ -54,9 +54,18 @@ export class SupabaseService {
     email_confirm?: boolean;
     phone?: string;
     phone_confirm?: boolean;
+    // deprecate in the future
     password: string;
+    full_name?: string;
+    picture?: string;
   }) {
-    const { data, error } = await this.supabase.auth.admin.createUser(payload);
+    const { data, error } = await this.supabase.auth.admin.createUser({
+      ...payload,
+      user_metadata: {
+        full_name: payload.full_name,
+        picture: payload.picture,
+      },
+    });
 
     if (error) {
       this.logger.error(`Error creating supabase user: ${error}`);

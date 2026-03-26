@@ -8,6 +8,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
 import { HotelAccountRole } from 'generated/prisma/enums';
 import { SupabaseService } from 'src/modules/supabase/supabase.service';
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class AccountsService {
@@ -16,29 +17,44 @@ export class AccountsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly supabaseService: SupabaseService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(hotelUuid: string, dto: CreateAccountDto) {
     this.logger.log(`Creating account for hotel ${hotelUuid}`);
 
-    const newUser = await this.supabaseService.createUser({
-      email: dto.email,
-      password: dto.password,
-    });
-    const newUserUuid = newUser.id;
-    this.logger.log(`Created new user ${newUserUuid}`);
+    this.logger.log(`Checking if user with email ${dto.email} already exists`);
+
+    let userUuid: string;
+    const existingUser = await this.usersService.findOneByEmail(dto.email);
+
+    if (existingUser) {
+      userUuid = existingUser.uuid;
+    } else {
+      const newUser = await this.supabaseService.createUser({
+        email: dto.email,
+        password: dto.password,
+        full_name: dto.full_name,
+        picture: dto.picture,
+      });
+      userUuid = newUser.id;
+    }
+
+    this.logger.log(`Created new supabase user ${userUuid}`);
 
     const newAccount = await this.prisma.hotel_accounts.create({
       data: {
         hotel_uuid: hotelUuid,
-        user_uuid: newUserUuid,
+        user_uuid: userUuid,
         role: dto.role ?? HotelAccountRole.staff,
         permissions: dto.permissions ?? [],
+        status: 'pending',
       },
+      include: { user: true },
     });
 
     this.logger.log(
-      `Creating account for user ${newUserUuid} in hotel ${hotelUuid}`,
+      `Creating account for user ${userUuid} in hotel ${hotelUuid}`,
     );
 
     return newAccount;
@@ -90,21 +106,30 @@ export class AccountsService {
       });
     }
 
-    await this.prisma.hotel_accounts.update({
+    if (dto.full_name || dto.picture) {
+      await this.usersService.update(userUuid, {
+        full_name: dto.full_name,
+        picture: dto.picture,
+      });
+    }
+
+    const updatedAccount = await this.prisma.hotel_accounts.update({
       where: { uuid: accountUuid },
       data: dto,
       include: { user: true },
     });
 
-    return account;
+    return updatedAccount;
   }
 
   async remove(accountUuid: string) {
     this.logger.log(`Removing account ${accountUuid}`);
     await this.findOne(accountUuid);
 
-    return this.prisma.hotel_accounts.delete({
+    const deletedAccount = await this.prisma.hotel_accounts.delete({
       where: { uuid: accountUuid },
     });
+
+    return deletedAccount;
   }
 }
