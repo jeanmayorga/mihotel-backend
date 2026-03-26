@@ -8,7 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { SubscriptionService } from 'src/dashboard/hotels/subscription/subscription.service';
+import { SubscriptionService } from 'src/modules/dashboard/hotels/subscription/subscription.service';
 
 export type SubscriptionRequiredGuardRequest = Request & {
   authUserUuid?: string;

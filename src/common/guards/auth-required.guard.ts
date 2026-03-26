@@ -5,22 +5,19 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { createClient } from '@supabase/supabase-js';
 import type { Request } from 'express';
+import { SupabaseService } from 'src/modules/supabase/supabase.service';
 
 @Injectable()
 export class AuthRequiredGuard implements CanActivate {
   private readonly logger = new Logger(AuthRequiredGuard.name);
-  private supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
-  );
-
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { authUserUuid?: string }>();
+
     const token = this.extractToken(request);
 
     if (!token) {
@@ -28,22 +25,12 @@ export class AuthRequiredGuard implements CanActivate {
     }
 
     try {
-      const {
-        data: { user },
-        error,
-      } = await this.supabase.auth.getUser(token);
-
-      if (error || !user) {
-        console.error({ error });
-        throw new UnauthorizedException('Invalid token');
-      }
-
-      this.logger.log(`user auth id: ${user.id}`);
-      const authUserUuid = user.id;
-      request.authUserUuid = authUserUuid;
+      const user = await this.supabaseService.getUserFromAccessToken(token);
+      request.authUserUuid = user.id;
 
       return true;
-    } catch {
+    } catch (error) {
+      this.logger.error(`Invalid token, error: ${error}`);
       throw new UnauthorizedException('Invalid token');
     }
   }

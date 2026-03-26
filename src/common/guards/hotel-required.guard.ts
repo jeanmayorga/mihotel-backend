@@ -8,7 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { UserHotelsService } from '../../dashboard/hotels/user_hotels/user_hotels.service';
+import { UserHotelsService } from '../../modules/dashboard/hotels/user_hotels/user_hotels.service';
 
 @Injectable()
 export class HotelRequiredGuard implements CanActivate {

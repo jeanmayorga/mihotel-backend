@@ -1,26 +1,26 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { PrismaModule } from './prisma/prisma.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
+import { SupabaseModule } from './modules/supabase/supabase.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
-import { DashboardModule } from './dashboard/dashboard.module';
-import { PublicModule } from './public/public.module';
-import { UserHotelsService } from './dashboard/hotels/user_hotels/user_hotels.service';
-import { CronModule } from './cron/cron.module';
-import { PlansModule } from './plans/plans.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { UserHotelsService } from './modules/dashboard/hotels/user_hotels/user_hotels.service';
+import { CronModule } from './modules/cron/cron.module';
+import { PlansModule } from './modules/plans/plans.module';
+import { CountriesModule } from './modules/countries/countries.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
     PrismaModule,
+    SupabaseModule,
+    CountriesModule,
     CronModule,
     DashboardModule,
+    HealthModule,
     PlansModule,
-    PublicModule,
   ],
   controllers: [],
-  providers: [
-    UserHotelsService,
-    // { provide: APP_GUARD, useClass: MeAccessGuard },
-    // { provide: APP_GUARD, useClass: HotelAccessGuard },
-  ],
+  providers: [UserHotelsService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
