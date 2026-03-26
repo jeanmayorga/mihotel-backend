@@ -1,5 +1,5 @@
 import {
-  ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -7,42 +7,41 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
 import { HotelAccountRole } from 'generated/prisma/enums';
+import { SupabaseService } from 'src/modules/supabase/supabase.service';
 
 @Injectable()
 export class AccountsService {
   private readonly logger = new Logger(AccountsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   async create(hotelUuid: string, dto: CreateAccountDto) {
-    this.logger.log(
-      `Creating account for user ${dto.user_uuid} in hotel ${hotelUuid}`,
-    );
+    this.logger.log(`Creating account for hotel ${hotelUuid}`);
 
-    const existing = await this.prisma.hotel_accounts.findUnique({
-      where: {
-        hotel_uuid_user_uuid: {
-          hotel_uuid: hotelUuid,
-          user_uuid: dto.user_uuid,
-        },
-      },
+    const newUser = await this.supabaseService.createUser({
+      email: dto.email,
+      password: dto.password,
     });
+    const newUserUuid = newUser.id;
+    this.logger.log(`Created new user ${newUserUuid}`);
 
-    if (existing) {
-      throw new ConflictException(
-        `User ${dto.user_uuid} already has an account in this hotel`,
-      );
-    }
-
-    return this.prisma.hotel_accounts.create({
+    const newAccount = await this.prisma.hotel_accounts.create({
       data: {
         hotel_uuid: hotelUuid,
-        user_uuid: dto.user_uuid,
+        user_uuid: newUserUuid,
         role: dto.role ?? HotelAccountRole.staff,
         permissions: dto.permissions ?? [],
       },
-      include: { user: true },
     });
+
+    this.logger.log(
+      `Creating account for user ${newUserUuid} in hotel ${hotelUuid}`,
+    );
+
+    return newAccount;
   }
 
   async findAll(hotelUuid: string) {
@@ -54,9 +53,9 @@ export class AccountsService {
     });
   }
 
-  async findOne(hotelUuid: string, accountUuid: string) {
+  async findOne(accountUuid: string) {
     const account = await this.prisma.hotel_accounts.findFirst({
-      where: { uuid: accountUuid, hotel_uuid: hotelUuid },
+      where: { uuid: accountUuid },
       include: { user: true },
     });
 
@@ -67,20 +66,42 @@ export class AccountsService {
     return account;
   }
 
-  async update(hotelUuid: string, accountUuid: string, dto: UpdateAccountDto) {
-    this.logger.log(`Updating account ${accountUuid} in hotel ${hotelUuid}`);
-    await this.findOne(hotelUuid, accountUuid);
+  async update(payload: {
+    userUuid: string;
+    accountUuid: string;
+    dto: UpdateAccountDto;
+  }) {
+    const userUuid = payload.userUuid;
+    const accountUuid = payload.accountUuid;
+    const dto = payload.dto;
 
-    return this.prisma.hotel_accounts.update({
+    this.logger.log(`Updating account ${accountUuid}`);
+
+    const account = await this.findOne(accountUuid);
+    if (account.user_uuid !== userUuid) {
+      throw new ForbiddenException(
+        'You are not authorized to update this account',
+      );
+    }
+
+    if (dto.password) {
+      await this.supabaseService.updateUser(userUuid, {
+        password: dto.password,
+      });
+    }
+
+    await this.prisma.hotel_accounts.update({
       where: { uuid: accountUuid },
       data: dto,
       include: { user: true },
     });
+
+    return account;
   }
 
-  async remove(hotelUuid: string, accountUuid: string) {
-    this.logger.log(`Removing account ${accountUuid} from hotel ${hotelUuid}`);
-    await this.findOne(hotelUuid, accountUuid);
+  async remove(accountUuid: string) {
+    this.logger.log(`Removing account ${accountUuid}`);
+    await this.findOne(accountUuid);
 
     return this.prisma.hotel_accounts.delete({
       where: { uuid: accountUuid },

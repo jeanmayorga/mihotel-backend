@@ -1,19 +1,24 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { HotelAccountRole } from 'generated/prisma/enums';
 import {
   IsArray,
+  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
 } from 'class-validator';
 
 export class CreateAccountDto {
-  @ApiProperty()
-  @IsUUID()
+  @ApiPropertyOptional({ type: String })
+  @IsString()
+  @IsEmail()
+  email: string;
+
+  @ApiPropertyOptional({ type: String })
+  @IsString()
   @IsNotEmpty()
-  user_uuid: string;
+  password: string;
 
   @ApiPropertyOptional({
     enum: HotelAccountRole,
@@ -31,6 +36,12 @@ export class CreateAccountDto {
 }
 
 export class UpdateAccountDto {
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  password?: string;
+
   @ApiPropertyOptional({ enum: HotelAccountRole })
   @IsOptional()
   @IsEnum(HotelAccountRole)

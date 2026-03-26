@@ -80,7 +80,6 @@ export class SupabaseService {
   async updateUser(
     userId: string,
     payload: {
-      email?: string;
       password?: string;
       email_confirm?: boolean;
       phone_confirm?: boolean;

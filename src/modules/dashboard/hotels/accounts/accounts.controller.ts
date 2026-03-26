@@ -16,6 +16,7 @@ import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
 import { AccountsService } from './accounts.service';
+import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
 
 @ApiTags('Dashboard / Hotel Accounts')
 @ApiBearerAuth()
@@ -27,39 +28,40 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Post()
-  create(@HotelUuid() hotelUuid: string, @Body() dto: CreateAccountDto) {
-    return this.accountsService.create(hotelUuid, dto);
+  async create(@HotelUuid() hotelUuid: string, @Body() dto: CreateAccountDto) {
+    const account = await this.accountsService.create(hotelUuid, dto);
+    return { data: account };
   }
 
   @Get()
   async findAll(@HotelUuid() hotelUuid: string) {
     const accounts = await this.accountsService.findAll(hotelUuid);
-    this.logger.log(`Found ${accounts.length} accounts for hotel ${hotelUuid}`);
     return { data: accounts };
   }
 
   @Get(':accountUuid')
-  findOne(
-    @HotelUuid() hotelUuid: string,
-    @Param('accountUuid', ParseUUIDPipe) accountUuid: string,
-  ) {
-    return this.accountsService.findOne(hotelUuid, accountUuid);
+  async findOne(@Param('accountUuid', ParseUUIDPipe) accountUuid: string) {
+    const account = await this.accountsService.findOne(accountUuid);
+    return { data: account };
   }
 
   @Patch(':accountUuid')
-  update(
-    @HotelUuid() hotelUuid: string,
+  async update(
+    @AuthUserUuid() authUserUuid: string,
     @Param('accountUuid', ParseUUIDPipe) accountUuid: string,
     @Body() dto: UpdateAccountDto,
   ) {
-    return this.accountsService.update(hotelUuid, accountUuid, dto);
+    const account = await this.accountsService.update({
+      accountUuid,
+      userUuid: authUserUuid,
+      dto,
+    });
+    return { data: account };
   }
 
   @Delete(':accountUuid')
-  remove(
-    @HotelUuid() hotelUuid: string,
-    @Param('accountUuid', ParseUUIDPipe) accountUuid: string,
-  ) {
-    return this.accountsService.remove(hotelUuid, accountUuid);
+  async remove(@Param('accountUuid', ParseUUIDPipe) accountUuid: string) {
+    const account = await this.accountsService.remove(accountUuid);
+    return { data: account };
   }
 }
