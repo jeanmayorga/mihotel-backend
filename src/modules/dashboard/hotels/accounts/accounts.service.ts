@@ -157,6 +157,14 @@ export class AccountsService {
       );
     }
 
+    if (account.role === HotelAccountRole.owner) {
+      throw new ForbiddenException('You cannot remove the owner of the hotel');
+    }
+
+    if (account.role === HotelAccountRole.admin) {
+      throw new ForbiddenException('You cannot remove the admin of the hotel');
+    }
+
     const deletedAccount = await this.prisma.hotel_accounts.delete({
       where: { uuid: accountUuid },
     });
