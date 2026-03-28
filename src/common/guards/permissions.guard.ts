@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { HotelAccountRole } from 'generated/prisma/enums';
+import { HotelAccountRole } from '@prisma/client';
 import { REQUIRED_PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
 
 export type PermissionsGuardRequest = Request & {

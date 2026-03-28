@@ -8,7 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { HotelAccountRole } from 'generated/prisma/enums';
+import { HotelAccountRole } from '@prisma/client';
 import { PrismaService } from '../../modules/prisma/prisma.service';
 
 @Injectable()

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
-import { HotelAccountRole } from 'generated/prisma/enums';
+import { HotelAccountRole } from '@prisma/client';
 import { SupabaseService } from 'src/modules/supabase/supabase.service';
 import { UsersService } from 'src/modules/users/users.service';
 import { ResendService } from 'src/modules/resend/resend.service';

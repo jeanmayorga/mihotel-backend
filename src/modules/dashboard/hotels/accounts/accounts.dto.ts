@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { HotelAccountRole } from 'generated/prisma/enums';
+import { HotelAccountRole } from '@prisma/client';
 import {
   IsArray,
   IsEmail,

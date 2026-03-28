@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma } from '@prisma/client';
 import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
 import { PlansService } from 'src/modules/plans/plans.service';
 import { startOfLocalDay } from 'src/common/helpers/billing-cycle';
