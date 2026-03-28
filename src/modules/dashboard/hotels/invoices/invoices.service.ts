@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { toUtcDateRange } from 'src/common/helpers/to-utc-date-range';
+import { toUtcDateRange } from '../../../../common/helpers/to-utc-date-range';
 
 @Injectable()
 export class InvoicesService {

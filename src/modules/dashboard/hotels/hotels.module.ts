@@ -7,7 +7,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
-import { PlansModule } from 'src/modules/plans/plans.module';
+import { PlansModule } from '../../plans/plans.module';
 import { ProductsModule } from './products/products.module';
 import { AccountsModule } from './accounts/accounts.module';
 

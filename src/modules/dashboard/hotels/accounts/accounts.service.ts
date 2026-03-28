@@ -7,10 +7,10 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
 import { HotelAccountRole } from '@prisma/client';
-import { SupabaseService } from 'src/modules/supabase/supabase.service';
-import { UsersService } from 'src/modules/users/users.service';
-import { ResendService } from 'src/modules/resend/resend.service';
-import { inviteToHotelTemplate } from 'src/modules/resend/templates/invite-to-hotel.template';
+import { SupabaseService } from '../../../supabase/supabase.service';
+import { UsersService } from '../../../users/users.service';
+import { ResendService } from '../../../resend/resend.service';
+import { inviteToHotelTemplate } from '../../../resend/templates/invite-to-hotel.template';
 
 @Injectable()
 export class AccountsService {

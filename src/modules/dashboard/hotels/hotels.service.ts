@@ -2,8 +2,8 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
-import { PlansService } from 'src/modules/plans/plans.service';
-import { startOfLocalDay } from 'src/common/helpers/billing-cycle';
+import { PlansService } from '../../plans/plans.service';
+import { startOfLocalDay } from '../../../common/helpers/billing-cycle';
 import slugify from 'slugify';
 
 type MinSubscription = Prisma.hotels_subscriptionsGetPayload<{

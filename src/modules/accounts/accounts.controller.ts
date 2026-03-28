@@ -8,8 +8,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
+import { AuthRequiredGuard } from '../../common/guards/auth-required.guard';
+import { AuthUserUuid } from '../../common/decorators/auth-user-uuid.decorator';
 import { AccountsService } from './accounts.service';
 
 @ApiTags('Dashboard / Hotel Accounts')

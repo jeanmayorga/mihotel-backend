@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { SupabaseService } from 'src/modules/supabase/supabase.service';
+import { SupabaseService } from '../../modules/supabase/supabase.service';
 
 @Injectable()
 export class AuthRequiredGuard implements CanActivate {

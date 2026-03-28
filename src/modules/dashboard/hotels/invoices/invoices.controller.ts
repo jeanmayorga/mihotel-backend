@@ -13,11 +13,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
-import { HotelTimezone } from 'src/common/decorators/hotel-timezone.decorator';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
+import { AuthRequiredGuard } from '../../../../common/guards/auth-required.guard';
+import { AccountRequiredGuard } from '../../../../common/guards/account-required.guard';
+import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
+import { HotelTimezone } from '../../../../common/decorators/hotel-timezone.decorator';
+import { AuthUserUuid } from '../../../../common/decorators/auth-user-uuid.decorator';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { GetInvoicesQueryDto } from './dto/get-invoices-query.dto';

@@ -1,8 +1,8 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
-import { SubscriptionUuid } from 'src/common/decorators/subscription-uuid.decorator';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
+import { SubscriptionUuid } from '../../../../../common/decorators/subscription-uuid.decorator';
+import { AuthRequiredGuard } from '../../../../../common/guards/auth-required.guard';
+import { AccountRequiredGuard } from '../../../../../common/guards/account-required.guard';
 import { InvoiceService } from './invoice.service';
 import { GetInvoicesQueryDto } from './invoices.dto';
 

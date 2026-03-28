@@ -14,9 +14,9 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { GetRoomsQueryDto } from './dto/get-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomsService } from './rooms.service';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
+import { AuthRequiredGuard } from '../../../../common/guards/auth-required.guard';
+import { AccountRequiredGuard } from '../../../../common/guards/account-required.guard';
+import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Rooms')
 @ApiBearerAuth()

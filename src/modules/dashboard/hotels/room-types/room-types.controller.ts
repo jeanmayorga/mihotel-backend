@@ -12,9 +12,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
 import { RoomTypesService } from './room-types.service';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
+import { AuthRequiredGuard } from '../../../../common/guards/auth-required.guard';
+import { AccountRequiredGuard } from '../../../../common/guards/account-required.guard';
+import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Room Types')
 @ApiBearerAuth()

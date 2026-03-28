@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
+import { AuthRequiredGuard } from '../../../../common/guards/auth-required.guard';
+import { AccountRequiredGuard } from '../../../../common/guards/account-required.guard';
 import { SubscriptionService } from './subscription.service';
 import { UpdateSubscriptionDto } from './subscription.dto';
-import { SubscriptionUuid } from 'src/common/decorators/subscription-uuid.decorator';
+import { SubscriptionUuid } from '../../../../common/decorators/subscription-uuid.decorator';
 
 @ApiTags('Dashboard / Subscription')
 @ApiBearerAuth()

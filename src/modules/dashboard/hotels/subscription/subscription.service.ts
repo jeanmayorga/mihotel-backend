@@ -10,7 +10,7 @@ import {
   localDayOfMonth,
   nextMonthlyBillingDate,
   startOfLocalDay,
-} from 'src/common/helpers/billing-cycle';
+} from '../../../../common/helpers/billing-cycle';
 
 @Injectable()
 export class SubscriptionService {

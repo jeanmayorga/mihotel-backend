@@ -11,10 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
+import { AuthRequiredGuard } from '../../../../common/guards/auth-required.guard';
+import { AccountRequiredGuard } from '../../../../common/guards/account-required.guard';
+import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
+import { AuthUserUuid } from '../../../../common/decorators/auth-user-uuid.decorator';
 import { TaxesService } from './taxes.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 

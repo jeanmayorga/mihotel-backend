@@ -1,8 +1,8 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
+import { AuthRequiredGuard } from '../../common/guards/auth-required.guard';
+import { AuthUserUuid } from '../../common/decorators/auth-user-uuid.decorator';
 
 @ApiTags('Users')
 @Controller('users')

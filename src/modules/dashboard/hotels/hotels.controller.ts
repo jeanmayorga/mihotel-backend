@@ -16,11 +16,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { HotelsService } from './hotels.service';
-import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
-import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
+import { AuthRequiredGuard } from '../../../common/guards/auth-required.guard';
+import { AuthUserUuid } from '../../../common/decorators/auth-user-uuid.decorator';
+import { HotelUuid } from '../../../common/decorators/hotel-uuid.decorator';
 import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
-import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
+import { AccountRequiredGuard } from '../../../common/guards/account-required.guard';
 
 @ApiTags('Dashboard / Hotels')
 @ApiBearerAuth()
