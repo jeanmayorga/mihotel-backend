@@ -135,27 +135,57 @@ export class InvoicesService {
     const createdAt = toUtcDateRange(from, to, timezone);
     const createdAtFilter = createdAt ? { created_at: createdAt } : undefined;
 
-    const totals = await this.prisma.hotels_invoices_v2.aggregate({
-      where: {
-        hotel_uuid: hotelUuid,
-        ...createdAtFilter,
-      },
-      _sum: {
-        total: true,
-        total_payments: true,
-        total_refunds: true,
-      },
-      _count: true,
-    });
+    const where = {
+      hotel_uuid: hotelUuid,
+      ...createdAtFilter,
+    };
+
+    const [totals, invoicesByStatus] = await Promise.all([
+      this.prisma.hotels_invoices_v2.aggregate({
+        where,
+        _sum: {
+          total: true,
+          total_payments: true,
+          total_refunds: true,
+        },
+        _count: true,
+      }),
+      this.prisma.hotels_invoices_v2.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
 
     const totalInvoices = Number(totals._count ?? 0);
     const totalAmount = Number(totals._sum?.total ?? 0);
     const totalPayments = Number(totals._sum?.total_payments ?? 0);
     const totalRefunds = Number(totals._sum?.total_refunds ?? 0);
     const totalBalance = totalAmount - totalPayments + totalRefunds;
+    const statusCounts = invoicesByStatus.reduce<Record<string, number>>(
+      (acc, item) => {
+        acc[item.status] = Number(item._count._all ?? 0);
+        return acc;
+      },
+      {},
+    );
+    const draftInvoices = statusCounts.draft ?? 0;
+    const paidInvoices = statusCounts.paid ?? 0;
+    const issuedInvoices = statusCounts.issued ?? 0;
+    const cancelledInvoices = statusCounts.cancelled ?? 0;
 
     return {
-      data: { totalInvoices, totalAmount, totalPayments, totalBalance },
+      data: {
+        totalAmount,
+        totalPayments,
+        totalRefunds,
+        totalBalance,
+        totalInvoices,
+        draftInvoices,
+        paidInvoices,
+        issuedInvoices,
+        cancelledInvoices,
+      },
     };
   }
 
