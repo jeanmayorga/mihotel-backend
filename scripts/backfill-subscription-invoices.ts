@@ -26,7 +26,7 @@
  */
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 import {
   localDayOfMonth,
   nextMonthlyBillingDate,

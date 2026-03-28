@@ -27,7 +27,7 @@
  */
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { fromZonedTime } from 'date-fns-tz';
 
 const DATABASE_URL = process.env.DATABASE_URL;
