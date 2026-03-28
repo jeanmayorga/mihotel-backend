@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { UserHotelsModule } from '../user_hotels/user_hotels.module';
 import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
 import { ItemsController } from './items.controller';
@@ -14,7 +13,6 @@ import { RefundsController } from './refunds.controller';
 import { RefundsService } from './refunds.service';
 
 @Module({
-  imports: [UserHotelsModule],
   controllers: [
     InvoicesController,
     ItemsController,

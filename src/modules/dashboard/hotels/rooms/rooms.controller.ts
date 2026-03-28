@@ -15,12 +15,12 @@ import { GetRoomsQueryDto } from './dto/get-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomsService } from './rooms.service';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Rooms')
 @ApiBearerAuth()
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/rooms')
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}

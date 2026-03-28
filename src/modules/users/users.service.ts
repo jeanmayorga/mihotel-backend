@@ -9,6 +9,9 @@ export class UsersService {
   findOne(uuid: string) {
     return this.prisma.public_users.findUnique({
       where: { uuid },
+      include: {
+        accounts: { include: { hotel: true } },
+      },
     });
   }
 

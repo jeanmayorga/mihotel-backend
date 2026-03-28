@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { HotelTimezone } from 'src/common/decorators/hotel-timezone.decorator';
 import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
@@ -25,7 +25,7 @@ import { GetInvoicesQueryDto } from './dto/get-invoices-query.dto';
 @ApiTags('Dashboard / Invoices')
 @ApiBearerAuth()
 @ApiParam({ name: 'hotelUuid', type: String })
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/invoices')
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}

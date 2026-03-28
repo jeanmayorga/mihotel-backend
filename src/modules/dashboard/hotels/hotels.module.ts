@@ -4,7 +4,6 @@ import { HotelsService } from './hotels.service';
 import { AlbumsModule } from './albums/albums.module';
 import { RoomTypesModule } from './room-types/room-types.module';
 import { RoomsModule } from './rooms/rooms.module';
-import { UserHotelsModule } from './user_hotels/user_hotels.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
@@ -20,7 +19,6 @@ import { AccountsModule } from './accounts/accounts.module';
     RoomTypesModule,
     RoomsModule,
     SubscriptionModule,
-    UserHotelsModule,
     ReservationsModule,
     PlansModule,
     ProductsModule,

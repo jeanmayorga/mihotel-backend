@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
 import { PaymentsService } from './payments.service';
@@ -21,7 +21,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 @ApiTags('Dashboard / Invoice Payments')
 @ApiBearerAuth()
 @ApiParam({ name: 'hotelUuid', type: String })
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/invoices/:invoiceUuid/payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}

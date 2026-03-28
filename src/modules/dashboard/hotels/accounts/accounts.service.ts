@@ -51,24 +51,6 @@ export class AccountsService {
     const hotelName = hotel.name ?? 'Hotel';
     const accountRole = dto.role ?? HotelAccountRole.staff;
 
-    this.logger.log(`Generating magic link for user ${userUuid}`);
-    const magicLink = await this.supabaseService.generateLink({
-      email: dto.email,
-      hotelUuid,
-    });
-
-    this.logger.log(`Sending invitation email to user ${userUuid}`);
-    await this.resendService.sendEmail({
-      to: dto.email,
-      from: 'noreply@mihotel.app',
-      subject: `Invitación a unirse a ${hotelName}`,
-      html: inviteToHotelTemplate({
-        hotelName,
-        accountRole,
-        magicLink,
-      }),
-    });
-
     this.logger.log(
       `Creating account for user ${userUuid} in hotel ${hotelUuid}`,
     );
@@ -81,6 +63,25 @@ export class AccountsService {
         status: 'pending',
       },
       include: { user: true },
+    });
+
+    this.logger.log(`Generating magic link for user ${userUuid}`);
+    const next = `/confirm-invitation/${newAccount.uuid}`;
+    const magicLink = await this.supabaseService.generateLink({
+      email: dto.email,
+      redirectTo: `${process.env.FRONTEND_URL}/auth/callback?next=${next}`,
+    });
+
+    this.logger.log(`Sending invitation email to user ${userUuid}`);
+    await this.resendService.sendEmail({
+      to: dto.email,
+      from: 'noreply@mihotel.app',
+      subject: `Invitación a unirse a ${hotelName}`,
+      html: inviteToHotelTemplate({
+        hotelName,
+        accountRole,
+        magicLink,
+      }),
     });
 
     return newAccount;

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
 import { RefundsService } from './refunds.service';
@@ -20,7 +20,7 @@ import { CreateRefundDto } from './dto/create-refund.dto';
 @ApiTags('Dashboard / Invoice Refunds')
 @ApiBearerAuth()
 @ApiParam({ name: 'hotelUuid', type: String })
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/invoices/:invoiceUuid/refunds')
 export class RefundsController {
   constructor(private readonly refundsService: RefundsService) {}

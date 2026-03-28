@@ -62,9 +62,4 @@ export class UpdateAccountDto {
   @IsArray()
   @IsString({ each: true })
   permissions?: string[];
-
-  @ApiPropertyOptional({ type: String })
-  @IsOptional()
-  @IsString()
-  status?: string;
 }

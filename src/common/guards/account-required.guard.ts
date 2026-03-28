@@ -8,18 +8,19 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { UserHotelsService } from '../../modules/dashboard/hotels/user_hotels/user_hotels.service';
+import { PrismaService } from '../../modules/prisma/prisma.service';
 
 @Injectable()
-export class HotelRequiredGuard implements CanActivate {
-  private readonly logger = new Logger(HotelRequiredGuard.name);
-  constructor(private readonly userHotelsService: UserHotelsService) {}
+export class AccountRequiredGuard implements CanActivate {
+  private readonly logger = new Logger(AccountRequiredGuard.name);
+  constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<
       Request & {
         authUserUuid?: string;
         hotelUuid?: string;
+        accountUuid?: string;
         hotelTimezone?: string;
       }
     >();
@@ -35,21 +36,24 @@ export class HotelRequiredGuard implements CanActivate {
       throw new BadRequestException('Invalid hotel uuid');
     }
 
-    const { hasAccess, timezone } =
-      await this.userHotelsService.getHotelContext(authUserUuid, hotelUuid);
+    const account = await this.prisma.hotel_accounts.findFirst({
+      where: { user_uuid: authUserUuid, hotel_uuid: hotelUuid },
+      include: { hotel: true },
+    });
 
-    if (!hasAccess) {
-      this.logger.log(
-        `hasAccess: false, authUserUuid: ${authUserUuid}, hotelUuid: ${hotelUuid}`,
-      );
+    if (!account) {
       throw new ForbiddenException('You do not have access to this hotel');
     }
 
-    this.logger.log(
-      `hasAccess: true, authUserUuid: ${authUserUuid}, hotelUuid: ${hotelUuid}`,
-    );
+    if (account.status !== 'confirmed') {
+      throw new ForbiddenException('Your account is not confirmed');
+    }
+
+    const hotel = account.hotel;
+    const timezone = hotel.timezone;
 
     request.hotelUuid = hotelUuid;
+    request.accountUuid = account.uuid;
     request.hotelTimezone = timezone;
 
     return true;

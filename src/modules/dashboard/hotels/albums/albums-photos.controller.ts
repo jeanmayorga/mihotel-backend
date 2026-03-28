@@ -13,12 +13,12 @@ import { CreateAlbumPhotoDto } from './dto/create-album-photo.dto';
 import { UpdateAlbumPhotoDto } from './dto/update-album-photo.dto';
 import { AlbumsPhotosService } from './albums-photos.service';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 
 @ApiTags('Dashboard / Albums')
 @ApiBearerAuth()
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/albums/:albumUuid/photos')
 export class AlbumsPhotosController {
   constructor(private readonly albumsPhotosService: AlbumsPhotosService) {}

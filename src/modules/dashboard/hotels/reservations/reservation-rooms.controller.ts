@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { ReservationRoomsService } from './reservation-rooms.service';
 import { CreateReservationRoomDto } from './dto/create-reservation-room.dto';
@@ -20,7 +20,7 @@ import { CreateReservationRoomDto } from './dto/create-reservation-room.dto';
 @ApiTags('Dashboard / Reservation Rooms')
 @ApiBearerAuth()
 @ApiParam({ name: 'hotelUuid', type: String })
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/reservations/:reservationUuid/rooms')
 export class ReservationRoomsController {
   constructor(

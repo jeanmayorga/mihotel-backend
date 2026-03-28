@@ -74,13 +74,13 @@ export class SupabaseService {
   async generateLink(payload: {
     email: string;
     full_name?: string;
-    hotelUuid: string;
+    redirectTo: string;
   }) {
     const { data, error } = await this.supabase.auth.admin.generateLink({
       type: 'magiclink',
       email: payload.email,
       options: {
-        redirectTo: `${process.env.FRONTEND_URL}/hotels/${payload.hotelUuid}/invite`,
+        redirectTo: payload.redirectTo,
       },
     });
 

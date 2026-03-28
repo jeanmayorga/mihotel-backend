@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import {
   CreateProductDto,
@@ -24,7 +24,7 @@ import { ProductsService } from './products.service';
 @ApiTags('Dashboard / Hotel Products')
 @ApiBearerAuth()
 @ApiParam({ name: 'hotelUuid', type: String })
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}

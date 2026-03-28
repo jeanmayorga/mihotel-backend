@@ -20,7 +20,7 @@ import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
 import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { CreateFreHotelDto, UpdateHotelDto } from './hotels.dto';
-import { UserHotelRequiredGuard } from 'src/common/guards/user-hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 
 @ApiTags('Dashboard / Hotels')
 @ApiBearerAuth()
@@ -48,7 +48,7 @@ export class HotelsController {
 
   @Get(':hotelUuid')
   @ApiParam({ name: 'hotelUuid', type: String })
-  @UseGuards(UserHotelRequiredGuard)
+  @UseGuards(AccountRequiredGuard)
   async findOne(@HotelUuid() hotelUuid: string) {
     const hotel = await this.hotelsService.findOne(hotelUuid);
     return { data: hotel };
@@ -67,7 +67,7 @@ export class HotelsController {
 
   @Patch(':hotelUuid')
   @ApiParam({ name: 'hotelUuid', type: String })
-  @UseGuards(UserHotelRequiredGuard)
+  @UseGuards(AccountRequiredGuard)
   @ApiOperation({ summary: 'Update hotel information' })
   @ApiBody({ type: UpdateHotelDto })
   async update(
@@ -80,7 +80,7 @@ export class HotelsController {
 
   @Delete(':hotelUuid')
   @ApiParam({ name: 'hotelUuid', type: String })
-  @UseGuards(UserHotelRequiredGuard)
+  @UseGuards(AccountRequiredGuard)
   @ApiOperation({ summary: 'Delete a hotel' })
   async delete(@HotelUuid() hotelUuid: string) {
     await this.hotelsService.delete(hotelUuid);

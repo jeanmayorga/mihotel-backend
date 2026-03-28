@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from 'src/common/guards/auth-required.guard';
-import { HotelRequiredGuard } from 'src/common/guards/hotel-required.guard';
+import { AccountRequiredGuard } from 'src/common/guards/account-required.guard';
 import { HotelUuid } from 'src/common/decorators/hotel-uuid.decorator';
 import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
 import { AccountsService } from './accounts.service';
@@ -21,7 +21,7 @@ import { AuthUserUuid } from 'src/common/decorators/auth-user-uuid.decorator';
 @ApiTags('Dashboard / Hotel Accounts')
 @ApiBearerAuth()
 @ApiParam({ name: 'hotelUuid', type: String })
-@UseGuards(AuthRequiredGuard, HotelRequiredGuard)
+@UseGuards(AuthRequiredGuard, AccountRequiredGuard)
 @Controller('dashboard/hotels/:hotelUuid/accounts')
 export class AccountsController {
   private readonly logger = new Logger(AccountsController.name);

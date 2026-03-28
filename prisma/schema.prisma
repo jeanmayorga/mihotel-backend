@@ -1258,7 +1258,7 @@ model public_users {
   hotels_reservations_history                             hotels_reservations_history[]
   users                                                   auth_users                    @relation(fields: [uuid], references: [id], onDelete: Cascade)
   users_hotels                                            users_hotels[]
-  hotel_accounts                                          hotel_accounts[]
+  accounts                                                hotel_accounts[]
 
   @@map("users")
   @@schema("public")
@@ -1278,13 +1278,14 @@ model users_hotels {
 }
 
 model hotel_accounts {
-  uuid        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hotel_uuid  String           @db.Uuid
-  user_uuid   String           @db.Uuid
-  role        HotelAccountRole @default(staff)
-  status      String           @default("pending")
-  permissions String[]         @default([])
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  uuid          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotel_uuid    String           @db.Uuid
+  user_uuid     String           @db.Uuid
+  role          HotelAccountRole @default(staff)
+  status        String           @default("pending")
+  permissions   String[]         @default([])
+  confirmed_at  DateTime?        @db.Timestamptz(6)
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
 
   hotel hotels @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
   user  public_users @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
