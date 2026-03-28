@@ -10,6 +10,7 @@ import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
 import { ResendModule } from './modules/resend/resend.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
+import { PermissionsGuard } from './common/guards/permissions.guard';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { AccountsModule } from './modules/accounts/accounts.module';
     UsersModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [PermissionsGuard],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

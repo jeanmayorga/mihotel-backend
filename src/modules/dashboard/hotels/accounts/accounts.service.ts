@@ -120,13 +120,6 @@ export class AccountsService {
 
     this.logger.log(`Updating account ${accountUuid}`);
 
-    const account = await this.findOne(accountUuid);
-    if (account.user_uuid !== userUuid) {
-      throw new ForbiddenException(
-        'You are not authorized to update this account',
-      );
-    }
-
     if (dto.password) {
       await this.supabaseService.updateUser(userUuid, {
         password: dto.password,
@@ -142,16 +135,27 @@ export class AccountsService {
 
     const updatedAccount = await this.prisma.hotel_accounts.update({
       where: { uuid: accountUuid },
-      data: dto,
+      data: {
+        permissions: dto.permissions,
+        role: dto.role,
+      },
       include: { user: true },
     });
 
     return updatedAccount;
   }
 
-  async remove(accountUuid: string) {
+  async remove(payload: { userUuid: string; accountUuid: string }) {
+    const { userUuid, accountUuid } = payload;
+
     this.logger.log(`Removing account ${accountUuid}`);
-    await this.findOne(accountUuid);
+    const account = await this.findOne(accountUuid);
+
+    if (account.user_uuid === userUuid) {
+      throw new ForbiddenException(
+        'You cannot remove your own account from this hotel',
+      );
+    }
 
     const deletedAccount = await this.prisma.hotel_accounts.delete({
       where: { uuid: accountUuid },

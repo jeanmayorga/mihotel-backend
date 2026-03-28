@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { HotelAccountRole } from 'generated/prisma/enums';
 import { PrismaService } from '../../modules/prisma/prisma.service';
 
 @Injectable()
@@ -22,6 +23,9 @@ export class AccountRequiredGuard implements CanActivate {
         hotelUuid?: string;
         accountUuid?: string;
         hotelTimezone?: string;
+        subscriptionUuid?: string;
+        hotelAccountPermissions?: string[];
+        hotelAccountRole?: HotelAccountRole;
       }
     >();
 
@@ -38,7 +42,7 @@ export class AccountRequiredGuard implements CanActivate {
 
     const account = await this.prisma.hotel_accounts.findFirst({
       where: { user_uuid: authUserUuid, hotel_uuid: hotelUuid },
-      include: { hotel: true },
+      include: { hotel: { include: { subscriptions: true } } },
     });
 
     if (!account) {
@@ -55,6 +59,9 @@ export class AccountRequiredGuard implements CanActivate {
     request.hotelUuid = hotelUuid;
     request.accountUuid = account.uuid;
     request.hotelTimezone = timezone;
+    request.subscriptionUuid = hotel.subscriptions[0].uuid;
+    request.hotelAccountPermissions = account.permissions;
+    request.hotelAccountRole = account.role;
 
     return true;
   }
