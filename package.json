@@ -26,6 +26,9 @@
   "prisma": {
     "seed": "bun run prisma/seed.ts"
   },
+  "_moduleAliases": {
+    "src": "src"
+  },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
@@ -39,6 +42,7 @@
     "class-validator": "^0.15.1",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.3.1",
+    "module-alias": "^2.3.4",
     "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "reflect-metadata": "^0.2.2",
