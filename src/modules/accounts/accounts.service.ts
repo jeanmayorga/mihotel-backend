@@ -9,7 +9,7 @@ export class AccountsService {
 
   async findAll(options: { userUuid: string }) {
     const userUuid = options.userUuid;
-    const accounts = await this.prisma.hotel_accounts.findMany({
+    const accounts = await this.prisma.hotels_accounts.findMany({
       where: { user_uuid: userUuid },
       include: {
         hotel: true,
@@ -23,7 +23,7 @@ export class AccountsService {
     const userUuid = options.userUuid;
     const accountUuid = options.accountUuid;
 
-    const account = await this.prisma.hotel_accounts.findUnique({
+    const account = await this.prisma.hotels_accounts.findUnique({
       where: { uuid: accountUuid, user_uuid: userUuid },
       include: { hotel: true },
     });
@@ -42,7 +42,7 @@ export class AccountsService {
       return null;
     }
 
-    const updatedAccount = await this.prisma.hotel_accounts.update({
+    const updatedAccount = await this.prisma.hotels_accounts.update({
       where: { uuid: accountUuid },
       data: { status: 'confirmed', confirmed_at: new Date() },
       select: { status: true, confirmed_at: true },

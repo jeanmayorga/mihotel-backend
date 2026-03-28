@@ -54,7 +54,7 @@ export class AccountsService {
     this.logger.log(
       `Creating account for user ${userUuid} in hotel ${hotelUuid}`,
     );
-    const newAccount = await this.prisma.hotel_accounts.create({
+    const newAccount = await this.prisma.hotels_accounts.create({
       data: {
         hotel_uuid: hotelUuid,
         user_uuid: userUuid,
@@ -90,9 +90,9 @@ export class AccountsService {
     return newAccount;
   }
 
-  async findAll(hotelUuid: string) {
+  findAll(hotelUuid: string) {
     this.logger.log(`Finding all accounts for hotel ${hotelUuid}`);
-    return this.prisma.hotel_accounts.findMany({
+    return this.prisma.hotels_accounts.findMany({
       where: { hotel_uuid: hotelUuid },
       include: { user: true },
       orderBy: { created_at: 'desc' },
@@ -100,7 +100,7 @@ export class AccountsService {
   }
 
   async findOne(accountUuid: string) {
-    const account = await this.prisma.hotel_accounts.findFirst({
+    const account = await this.prisma.hotels_accounts.findFirst({
       where: { uuid: accountUuid },
       include: { user: true },
     });
@@ -136,7 +136,7 @@ export class AccountsService {
       });
     }
 
-    const updatedAccount = await this.prisma.hotel_accounts.update({
+    const updatedAccount = await this.prisma.hotels_accounts.update({
       where: { uuid: accountUuid },
       data: {
         permissions: dto.permissions,
@@ -168,7 +168,7 @@ export class AccountsService {
       throw new ForbiddenException('You cannot remove the admin of the hotel');
     }
 
-    const deletedAccount = await this.prisma.hotel_accounts.delete({
+    const deletedAccount = await this.prisma.hotels_accounts.delete({
       where: { uuid: accountUuid },
     });
 

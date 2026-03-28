@@ -596,7 +596,7 @@ model hotels {
   hotels_visits                      hotels_visits[]
   hotels_whatsapp_messages           hotels_whatsapp_messages[]
   users_hotels                       users_hotels[]
-  accounts                           hotel_accounts[]
+  accounts                           hotels_accounts[]
 
   @@unique([city_uuid, slug])
   @@schema("public")
@@ -1257,7 +1257,7 @@ model public_users {
   hotels_reservations_history                             hotels_reservations_history[]
   users                                                   auth_users                    @relation(fields: [uuid], references: [id], onDelete: Cascade)
   users_hotels                                            users_hotels[]
-  accounts                                                hotel_accounts[]
+  accounts                                                hotels_accounts[]
 
   @@map("users")
   @@schema("public")
@@ -1276,7 +1276,7 @@ model users_hotels {
   @@schema("public")
 }
 
-model hotel_accounts {
+model hotels_accounts {
   uuid          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hotel_uuid    String           @db.Uuid
   user_uuid     String           @db.Uuid

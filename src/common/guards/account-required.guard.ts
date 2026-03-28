@@ -40,7 +40,7 @@ export class AccountRequiredGuard implements CanActivate {
       throw new BadRequestException('Invalid hotel uuid');
     }
 
-    const account = await this.prisma.hotel_accounts.findFirst({
+    const account = await this.prisma.hotels_accounts.findFirst({
       where: { user_uuid: authUserUuid, hotel_uuid: hotelUuid },
       include: { hotel: { include: { subscriptions: true } } },
     });
