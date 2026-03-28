@@ -17,18 +17,8 @@ export class CreateAccountDto {
 
   @ApiPropertyOptional({ type: String })
   @IsString()
-  @IsOptional()
-  picture?: string;
-
-  @ApiPropertyOptional({ type: String })
-  @IsString()
   @IsEmail()
   email: string;
-
-  @ApiPropertyOptional({ type: String })
-  @IsString()
-  @IsNotEmpty()
-  password: string;
 
   @ApiPropertyOptional({
     enum: HotelAccountRole,

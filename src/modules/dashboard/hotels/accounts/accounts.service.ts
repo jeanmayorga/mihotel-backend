@@ -9,6 +9,8 @@ import { CreateAccountDto, UpdateAccountDto } from './accounts.dto';
 import { HotelAccountRole } from 'generated/prisma/enums';
 import { SupabaseService } from 'src/modules/supabase/supabase.service';
 import { UsersService } from 'src/modules/users/users.service';
+import { ResendService } from 'src/modules/resend/resend.service';
+import { inviteToHotelTemplate } from 'src/modules/resend/templates/invite-to-hotel.template';
 
 @Injectable()
 export class AccountsService {
@@ -18,44 +20,68 @@ export class AccountsService {
     private readonly prisma: PrismaService,
     private readonly supabaseService: SupabaseService,
     private readonly usersService: UsersService,
+    private readonly resendService: ResendService,
   ) {}
 
   async create(hotelUuid: string, dto: CreateAccountDto) {
     this.logger.log(`Creating account for hotel ${hotelUuid}`);
 
-    this.logger.log(`Checking if user with email ${dto.email} already exists`);
-
     let userUuid: string;
     const existingUser = await this.usersService.findOneByEmail(dto.email);
-
     if (existingUser) {
+      this.logger.log(`User ${dto.email} already exists, using existing user`);
       userUuid = existingUser.uuid;
     } else {
+      this.logger.log(`Creating new supabase user ${dto.email}`);
       const newUser = await this.supabaseService.createUser({
         email: dto.email,
-        password: dto.password,
         full_name: dto.full_name,
-        picture: dto.picture,
       });
       userUuid = newUser.id;
     }
 
-    this.logger.log(`Created new supabase user ${userUuid}`);
+    this.logger.log(`Finding hotel ${hotelUuid}`);
+    const hotel = await this.prisma.hotels.findUnique({
+      where: { uuid: hotelUuid },
+      select: { name: true },
+    });
+    if (!hotel) {
+      throw new NotFoundException(`Hotel ${hotelUuid} not found`);
+    }
+    const hotelName = hotel.name ?? 'Hotel';
+    const accountRole = dto.role ?? HotelAccountRole.staff;
 
-    const newAccount = await this.prisma.hotel_accounts.create({
-      data: {
-        hotel_uuid: hotelUuid,
-        user_uuid: userUuid,
-        role: dto.role ?? HotelAccountRole.staff,
-        permissions: dto.permissions ?? [],
-        status: 'pending',
-      },
-      include: { user: true },
+    this.logger.log(`Generating magic link for user ${userUuid}`);
+    const magicLink = await this.supabaseService.generateLink({
+      email: dto.email,
+      hotelUuid,
+    });
+
+    this.logger.log(`Sending invitation email to user ${userUuid}`);
+    await this.resendService.sendEmail({
+      to: dto.email,
+      from: 'noreply@mihotel.app',
+      subject: `Invitación a unirse a ${hotelName}`,
+      html: inviteToHotelTemplate({
+        hotelName,
+        accountRole,
+        magicLink,
+      }),
     });
 
     this.logger.log(
       `Creating account for user ${userUuid} in hotel ${hotelUuid}`,
     );
+    const newAccount = await this.prisma.hotel_accounts.create({
+      data: {
+        hotel_uuid: hotelUuid,
+        user_uuid: userUuid,
+        role: accountRole,
+        permissions: dto.permissions ?? [],
+        status: 'pending',
+      },
+      include: { user: true },
+    });
 
     return newAccount;
   }

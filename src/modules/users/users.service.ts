@@ -13,7 +13,7 @@ export class UsersService {
   }
 
   findOneByEmail(email: string) {
-    return this.prisma.public_users.findUniqueOrThrow({
+    return this.prisma.public_users.findFirst({
       where: { email },
     });
   }

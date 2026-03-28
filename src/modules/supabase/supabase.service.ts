@@ -54,16 +54,12 @@ export class SupabaseService {
     email_confirm?: boolean;
     phone?: string;
     phone_confirm?: boolean;
-    // deprecate in the future
-    password: string;
     full_name?: string;
-    picture?: string;
   }) {
     const { data, error } = await this.supabase.auth.admin.createUser({
       ...payload,
       user_metadata: {
         full_name: payload.full_name,
-        picture: payload.picture,
       },
     });
 
@@ -73,6 +69,27 @@ export class SupabaseService {
     }
 
     return data.user;
+  }
+
+  async generateLink(payload: {
+    email: string;
+    full_name?: string;
+    hotelUuid: string;
+  }) {
+    const { data, error } = await this.supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: payload.email,
+      options: {
+        redirectTo: `${process.env.FRONTEND_URL}/hotels/${payload.hotelUuid}/invite`,
+      },
+    });
+
+    if (error) {
+      this.logger.error(`Error creating supabase user: ${error}`);
+      throw new Error(error.message);
+    }
+
+    return data.properties.action_link;
   }
 
   async deleteUser(userId: string) {

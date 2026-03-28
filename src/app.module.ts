@@ -9,6 +9,7 @@ import { PlansModule } from './modules/plans/plans.module';
 import { CountriesModule } from './modules/countries/countries.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
+import { ResendModule } from './modules/resend/resend.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     PlansModule,
     PrismaModule,
+    ResendModule,
     SupabaseModule,
     UsersModule,
   ],
