@@ -65,11 +65,14 @@ export class AccountsService {
       include: { user: true },
     });
 
-    this.logger.log(`Generating magic link for user ${userUuid}`);
     const next = `/confirm-invitation/${newAccount.uuid}`;
+    const redirectTo = `${process.env.FRONTEND_URL}/auth/callback?next=${next}`;
+    this.logger.log(
+      `Generating magic link for user ${dto.email} to ${redirectTo}`,
+    );
     const magicLink = await this.supabaseService.generateLink({
       email: dto.email,
-      redirectTo: `${process.env.FRONTEND_URL}/auth/callback?next=${next}`,
+      redirectTo,
     });
 
     this.logger.log(`Sending invitation email to user ${userUuid}`);
