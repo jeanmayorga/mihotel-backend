@@ -5,6 +5,7 @@ import { ReservationsService } from './reservations.service';
 import { Prisma } from '@prisma/client';
 import { formatIsoDateOnly } from 'src/common/helpers/format-iso-date-only';
 import { endOfMonth, startOfMonth } from 'date-fns';
+import { fromZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class ReservationRoomsService {
@@ -25,24 +26,43 @@ export class ReservationRoomsService {
     };
   }
 
-  async getSummary(options: { hotelUuid: string; from?: string; to?: string }) {
+  async getSummary(options: {
+    hotelUuid: string;
+    from?: string;
+    to?: string;
+    orderBy?: string;
+    hotelTimezone?: string;
+  }) {
     const {
       hotelUuid,
       from = startOfMonth(new Date()),
       to = endOfMonth(new Date()),
+      orderBy = 'check_in_date',
+      hotelTimezone = 'America/Guayaquil',
     } = options;
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
 
-    const checkIn = { gte: fromDate, lte: toDate };
-    const checkInFilter = checkIn ? { check_in_date: checkIn } : undefined;
+    let rangeFilter: Prisma.hotels_reservations_rooms_v2WhereInput | undefined;
+    //check in
+    if (orderBy === 'check_in_date') {
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      const checkIn = { gte: fromDate, lte: toDate };
+      rangeFilter = { check_in_date: checkIn };
+    }
+    //created at
+    if (orderBy === 'created_at') {
+      const fromDate = fromZonedTime(from, hotelTimezone);
+      const toDate = fromZonedTime(to, hotelTimezone);
+      const createdAt = { gte: fromDate, lte: toDate };
+      rangeFilter = { created_at: createdAt };
+    }
 
     const groupedByStatus =
       await this.prisma.hotels_reservations_rooms_v2.groupBy({
         by: ['status'],
         where: {
           reservation: { hotel_uuid: hotelUuid },
-          ...checkInFilter,
+          ...rangeFilter,
         },
         _count: { _all: true },
       });
@@ -84,6 +104,7 @@ export class ReservationRoomsService {
     status?: string;
     roomUuid?: string;
     customerUuid?: string;
+    hotelTimezone?: string;
   }) {
     const {
       hotelUuid,
@@ -97,19 +118,31 @@ export class ReservationRoomsService {
       status,
       roomUuid,
       customerUuid,
+      hotelTimezone = 'America/Guayaquil',
     } = options;
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
 
+    let rangeFilter: Prisma.hotels_reservations_rooms_v2WhereInput | undefined;
     //check in
-    const checkIn = { gte: fromDate, lte: toDate };
-    const checkInFilter = checkIn ? { check_in_date: checkIn } : undefined;
+    if (orderBy === 'check_in_date') {
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      const checkIn = { gte: fromDate, lte: toDate };
+      rangeFilter = { check_in_date: checkIn };
+    }
+    //created at
+    if (orderBy === 'created_at') {
+      const fromDate = fromZonedTime(from, hotelTimezone);
+      const toDate = fromZonedTime(to, hotelTimezone);
+      const createdAt = { gte: fromDate, lte: toDate };
+      rangeFilter = { created_at: createdAt };
+    }
+
     const sortDirection: Prisma.SortOrder = order === 'asc' ? 'asc' : 'desc';
     const orderByFields: Prisma.hotels_reservations_rooms_v2OrderByWithRelationInput[] =
       [
         { [orderBy]: sortDirection },
         { created_at: sortDirection },
-        { uuid: sortDirection },
+        { reservation: { reservation_number: sortDirection } },
       ];
 
     //customer uuid
@@ -147,7 +180,7 @@ export class ReservationRoomsService {
           },
           ...roomUuidFilter,
           ...statusFilter,
-          ...checkInFilter,
+          ...rangeFilter,
         },
         include: {
           room: true,

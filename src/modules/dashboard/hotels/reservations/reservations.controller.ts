@@ -18,16 +18,17 @@ import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
 import { AuthUserUuid } from '../../../../common/decorators/auth-user-uuid.decorator';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
-import { GetReservationsQueryDto } from './dto/get-reservations-query.dto';
 import { GetCalendarQueryDto } from './dto/get-calendar-query.dto';
 import { presentReservationsCalendar } from './reservations-calendar.presenter';
 import { ReservationRoomsService } from './reservation-rooms.service';
 import {
   GetSummaryQueryDto,
+  GetReservationsQueryDto,
   UpdateReservationRoomStatusDto,
 } from './reservations.dto';
 import { RequirePermissions } from 'src/common/decorators/require-permissions.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { HotelTimezone } from 'src/common/decorators/hotel-timezone.decorator';
 
 @ApiTags('Dashboard / Reservations')
 @ApiBearerAuth()
@@ -45,11 +46,14 @@ export class ReservationsController {
   async summary(
     @HotelUuid() hotelUuid: string,
     @Query() query: GetSummaryQueryDto,
+    @HotelTimezone() hotelTimezone: string,
   ) {
     return this.reservationRoomsService.getSummary({
       hotelUuid,
       from: query.from,
       to: query.to,
+      orderBy: query.orderBy,
+      hotelTimezone,
     });
   }
 
@@ -57,6 +61,7 @@ export class ReservationsController {
   @RequirePermissions('reservations:read')
   findAll(
     @HotelUuid() hotelUuid: string,
+    @HotelTimezone() hotelTimezone: string,
     @Query() query: GetReservationsQueryDto,
   ) {
     const page = query.page;
@@ -80,6 +85,7 @@ export class ReservationsController {
       status,
       roomUuid: query.roomUuid,
       customerUuid: query.customerUuid,
+      hotelTimezone,
     });
   }
 
