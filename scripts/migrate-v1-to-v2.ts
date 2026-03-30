@@ -13,6 +13,7 @@
  *
  * Flags:
  *   --dry-run  Solo muestra lo que haría, sin insertar nada
+ *   --clean-v2 Limpia tablas v2 antes de migrar
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -26,6 +27,7 @@ if (!DATABASE_URL) {
 }
 
 const dryRun = process.argv.includes('--dry-run');
+const cleanV2 = process.argv.includes('--clean-v2');
 
 const prisma: PrismaClient = new PrismaClient({
   adapter: new PrismaPg({ connectionString: DATABASE_URL }),
@@ -62,6 +64,7 @@ function invoiceDiscountsV2(client: PrismaClient) {
   return (
     client as unknown as {
       hotels_invoices_discounts_v2: {
+        deleteMany: () => Promise<{ count: number }>;
         create: (args: {
           data: InvoiceDiscountV2CreateData;
         }) => Promise<unknown>;
@@ -74,6 +77,7 @@ function invoiceTaxesV2(client: PrismaClient) {
   return (
     client as unknown as {
       hotels_invoices_taxes_v2: {
+        deleteMany: () => Promise<{ count: number }>;
         create: (args: { data: InvoiceTaxV2CreateData }) => Promise<unknown>;
       };
     }
@@ -84,6 +88,7 @@ function invoiceRefundsV2(client: PrismaClient) {
   return (
     client as unknown as {
       hotels_invoices_refunds_v2: {
+        deleteMany: () => Promise<{ count: number }>;
         findFirst: (args: {
           where: { payment_uuid: string };
         }) => Promise<unknown>;
@@ -121,6 +126,61 @@ function invoicesV2(client: PrismaClient) {
       };
     }
   ).hotels_invoices_v2;
+}
+
+async function cleanV2Tables() {
+  console.log('\n=== Limpiando tablas v2 ===');
+
+  const counts = {
+    reservationsRooms: await prisma.hotels_reservations_rooms_v2.count(),
+    reservations: await prisma.hotels_reservations_v2.count(),
+    refunds: await prisma.hotels_invoices_refunds_v2.count(),
+    payments: await prisma.hotels_invoices_payments_v2.count(),
+    items: await prisma.hotels_invoices_items_v2.count(),
+    discounts: await prisma.hotels_invoices_discounts_v2.count(),
+    taxes: await prisma.hotels_invoices_taxes_v2.count(),
+    invoices: await prisma.hotels_invoices_v2.count(),
+  };
+
+  console.log('  Registros actuales en v2:');
+  console.log(`    reservations_rooms_v2: ${counts.reservationsRooms}`);
+  console.log(`    reservations_v2: ${counts.reservations}`);
+  console.log(`    invoices_refunds_v2: ${counts.refunds}`);
+  console.log(`    invoices_payments_v2: ${counts.payments}`);
+  console.log(`    invoices_items_v2: ${counts.items}`);
+  console.log(`    invoices_discounts_v2: ${counts.discounts}`);
+  console.log(`    invoices_taxes_v2: ${counts.taxes}`);
+  console.log(`    invoices_v2: ${counts.invoices}`);
+
+  if (dryRun) {
+    console.log('  DRY RUN: no se eliminará nada');
+    return;
+  }
+
+  // Orden importante por llaves foráneas (hijos -> padres).
+  const deletedReservationsRooms =
+    await prisma.hotels_reservations_rooms_v2.deleteMany();
+  const deletedReservations = await prisma.hotels_reservations_v2.deleteMany();
+  const deletedRefunds = await invoiceRefundsV2(prisma).deleteMany();
+  const deletedPayments = await prisma.hotels_invoices_payments_v2.deleteMany();
+  const deletedItems = await prisma.hotels_invoices_items_v2.deleteMany();
+  const deletedDiscounts = await invoiceDiscountsV2(prisma).deleteMany();
+  const deletedTaxes = await invoiceTaxesV2(prisma).deleteMany();
+  const deletedInvoices = await prisma.hotels_invoices_v2.deleteMany();
+
+  console.log('  ✓ Limpieza completada:');
+  console.log(
+    `    reservations_rooms_v2 eliminados: ${deletedReservationsRooms.count}`,
+  );
+  console.log(`    reservations_v2 eliminados: ${deletedReservations.count}`);
+  console.log(`    invoices_refunds_v2 eliminados: ${deletedRefunds.count}`);
+  console.log(`    invoices_payments_v2 eliminados: ${deletedPayments.count}`);
+  console.log(`    invoices_items_v2 eliminados: ${deletedItems.count}`);
+  console.log(
+    `    invoices_discounts_v2 eliminados: ${deletedDiscounts.count}`,
+  );
+  console.log(`    invoices_taxes_v2 eliminados: ${deletedTaxes.count}`);
+  console.log(`    invoices_v2 eliminados: ${deletedInvoices.count}`);
 }
 
 async function migrateReservations() {
@@ -648,6 +708,9 @@ async function main() {
   );
 
   try {
+    if (cleanV2) {
+      await cleanV2Tables();
+    }
     await migrateReservations();
     await migrateInvoices();
     await migrateRefunds();

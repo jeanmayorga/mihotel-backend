@@ -2,6 +2,9 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateReservationRoomDto } from './dto/create-reservation-room.dto';
 import { ReservationsService } from './reservations.service';
+import { Prisma } from '@prisma/client';
+import { formatIsoDateOnly } from 'src/common/helpers/format-iso-date-only';
+import { endOfMonth, startOfMonth } from 'date-fns';
 
 @Injectable()
 export class ReservationRoomsService {
@@ -11,6 +14,175 @@ export class ReservationRoomsService {
     private readonly prisma: PrismaService,
     private readonly reservationsService: ReservationsService,
   ) {}
+
+  private formatReservationRoom<
+    T extends { check_in_date: Date; check_out_date: Date },
+  >(row: T) {
+    return {
+      ...row,
+      check_in_date: formatIsoDateOnly(row.check_in_date),
+      check_out_date: formatIsoDateOnly(row.check_out_date),
+    };
+  }
+
+  async getSummary(options: { hotelUuid: string; from?: string; to?: string }) {
+    const {
+      hotelUuid,
+      from = startOfMonth(new Date()),
+      to = endOfMonth(new Date()),
+    } = options;
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    const checkIn = { gte: fromDate, lte: toDate };
+    const checkInFilter = checkIn ? { check_in_date: checkIn } : undefined;
+
+    const groupedByStatus =
+      await this.prisma.hotels_reservations_rooms_v2.groupBy({
+        by: ['status'],
+        where: {
+          reservation: { hotel_uuid: hotelUuid },
+          ...checkInFilter,
+        },
+        _count: { _all: true },
+      });
+
+    const summary = {
+      total: 0,
+      pending: 0,
+      confirmed: 0,
+      checked_in: 0,
+      checked_out: 0,
+      no_show: 0,
+      cancelled: 0,
+    };
+
+    for (const item of groupedByStatus) {
+      const count = item._count._all;
+      summary.total += count;
+
+      if (item.status === 'pending') summary.pending = count;
+      if (item.status === 'confirmed') summary.confirmed = count;
+      if (item.status === 'checked_in') summary.checked_in = count;
+      if (item.status === 'checked_out') summary.checked_out = count;
+      if (item.status === 'no_show') summary.no_show = count;
+      if (item.status === 'cancelled') summary.cancelled = count;
+    }
+
+    return { data: summary };
+  }
+
+  async findAll(options: {
+    hotelUuid: string;
+    page?: number;
+    limit?: number;
+    orderBy?: string;
+    order?: string;
+    from?: string;
+    to?: string;
+    search?: string;
+    status?: string;
+    roomUuid?: string;
+    customerUuid?: string;
+  }) {
+    const {
+      hotelUuid,
+      page = 1,
+      limit = 20,
+      orderBy = 'check_in_date',
+      order = 'desc',
+      from = startOfMonth(new Date()),
+      to = endOfMonth(new Date()),
+      search,
+      status,
+      roomUuid,
+      customerUuid,
+    } = options;
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    //check in
+    const checkIn = { gte: fromDate, lte: toDate };
+    const checkInFilter = checkIn ? { check_in_date: checkIn } : undefined;
+
+    //customer uuid
+    const customerUuidFilter = customerUuid
+      ? { customer_uuid: customerUuid }
+      : undefined;
+
+    //status
+    const statusFilter = status ? { status } : undefined;
+
+    //room uuid
+    const roomUuidFilter = roomUuid ? { room_uuid: roomUuid } : undefined;
+
+    //customer search
+    const searchCustomerFilter = search
+      ? {
+          customer: {
+            is: {
+              full_name: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        }
+      : {};
+
+    const reservations =
+      await this.prisma.hotels_reservations_rooms_v2.findMany({
+        where: {
+          reservation: {
+            hotel_uuid: hotelUuid,
+            ...customerUuidFilter,
+            ...searchCustomerFilter,
+          },
+          ...roomUuidFilter,
+          ...statusFilter,
+          ...checkInFilter,
+        },
+        include: {
+          room: true,
+          reservation: {
+            include: {
+              customer: true,
+            },
+          },
+        },
+        orderBy: { [orderBy]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    const hasMore = reservations.length === limit;
+
+    return {
+      data: reservations.map((row) => this.formatReservationRoom(row)),
+      hasMore,
+    };
+  }
+
+  async findOne(reservationRoomUuid: string) {
+    const reservationRoom =
+      await this.prisma.hotels_reservations_rooms_v2.findFirst({
+        where: { uuid: reservationRoomUuid },
+      });
+
+    if (!reservationRoom) {
+      return null;
+    }
+    return this.formatReservationRoom(reservationRoom);
+  }
+
+  async findOneOrThrow(reservationRoomUuid: string) {
+    const reservationRoom = await this.findOne(reservationRoomUuid);
+    if (!reservationRoom) {
+      throw new NotFoundException(
+        `Reservation room ${reservationRoomUuid} not found`,
+      );
+    }
+    return reservationRoom;
+  }
 
   async addRoom(
     hotelUuid: string,
@@ -23,7 +195,7 @@ export class ReservationRoomsService {
       reservationUuid,
     );
 
-    return this.prisma.hotels_reservations_rooms_v2.create({
+    const created = await this.prisma.hotels_reservations_rooms_v2.create({
       data: {
         reservation_uuid: reservationUuid,
         room_uuid: dto.room_uuid,
@@ -35,6 +207,8 @@ export class ReservationRoomsService {
         price_per_night: dto.price_per_night,
       },
     });
+
+    return this.formatReservationRoom(created);
   }
 
   async updateRoom(
@@ -59,7 +233,7 @@ export class ReservationRoomsService {
       throw new NotFoundException(`Reservation room ${roomUuid} not found`);
     }
 
-    return this.prisma.hotels_reservations_rooms_v2.update({
+    const updated = await this.prisma.hotels_reservations_rooms_v2.update({
       where: { uuid: roomUuid },
       data: {
         ...(dto.room_uuid !== undefined && { room_uuid: dto.room_uuid }),
@@ -83,87 +257,103 @@ export class ReservationRoomsService {
         }),
       },
     });
+
+    return this.formatReservationRoom(updated);
   }
 
-  async removeRoom(
-    hotelUuid: string,
-    reservationUuid: string,
-    roomUuid: string,
-  ) {
-    this.logger.log(
-      `Removing room ${roomUuid} from reservation ${reservationUuid}`,
-    );
-    await this.reservationsService.getReservationOrThrow(
-      hotelUuid,
-      reservationUuid,
-    );
-
+  async remove(reservationRoomUuid: string) {
+    this.logger.log(`Removing reservation room ${reservationRoomUuid}`);
+    await this.findOneOrThrow(reservationRoomUuid);
     await this.prisma.hotels_reservations_rooms_v2.delete({
-      where: { uuid: roomUuid, reservation_uuid: reservationUuid },
+      where: { uuid: reservationRoomUuid },
     });
   }
 
-  async checkIn(hotelUuid: string, reservationUuid: string, roomUuid: string) {
-    this.logger.log(`Check-in room ${roomUuid}`);
-    await this.reservationsService.getReservationOrThrow(
-      hotelUuid,
-      reservationUuid,
+  async pending(reservationRoomUuid: string) {
+    this.logger.log(
+      `Marking reservation room as pending ${reservationRoomUuid}`,
     );
-
-    return this.prisma.hotels_reservations_rooms_v2.update({
-      where: { uuid: roomUuid, reservation_uuid: reservationUuid },
+    await this.findOneOrThrow(reservationRoomUuid);
+    const pending = await this.prisma.hotels_reservations_rooms_v2.update({
+      where: { uuid: reservationRoomUuid },
       data: {
-        status: 'checked_in',
-        checked_in_at: new Date(),
+        status: 'pending',
       },
     });
+    return this.formatReservationRoom(pending);
   }
 
-  async checkOut(hotelUuid: string, reservationUuid: string, roomUuid: string) {
-    this.logger.log(`Check-out room ${roomUuid}`);
-    await this.reservationsService.getReservationOrThrow(
-      hotelUuid,
-      reservationUuid,
-    );
-
-    return this.prisma.hotels_reservations_rooms_v2.update({
-      where: { uuid: roomUuid, reservation_uuid: reservationUuid },
-      data: {
-        status: 'checked_out',
-        checked_out_at: new Date(),
-      },
-    });
-  }
-
-  async cancel(hotelUuid: string, reservationUuid: string, roomUuid: string) {
-    this.logger.log(`Cancel room ${roomUuid}`);
-    await this.reservationsService.getReservationOrThrow(
-      hotelUuid,
-      reservationUuid,
-    );
-
-    return this.prisma.hotels_reservations_rooms_v2.update({
-      where: { uuid: roomUuid, reservation_uuid: reservationUuid },
-      data: {
-        status: 'cancelled',
-        cancelled_at: new Date(),
-      },
-    });
-  }
-
-  async confirm(hotelUuid: string, reservationUuid: string, roomUuid: string) {
-    this.logger.log(`Confirm room ${roomUuid}`);
-    await this.reservationsService.getReservationOrThrow(
-      hotelUuid,
-      reservationUuid,
-    );
-
-    return this.prisma.hotels_reservations_rooms_v2.update({
-      where: { uuid: roomUuid, reservation_uuid: reservationUuid },
+  async confirm(reservationRoomUuid: string) {
+    this.logger.log(`Confirming reservation room ${reservationRoomUuid}`);
+    await this.findOneOrThrow(reservationRoomUuid);
+    const confirmed = await this.prisma.hotels_reservations_rooms_v2.update({
+      where: { uuid: reservationRoomUuid },
       data: {
         status: 'confirmed',
         confirmed_at: new Date(),
       },
     });
+
+    return this.formatReservationRoom(confirmed);
+  }
+
+  async checkIn(reservationRoomUuid: string) {
+    this.logger.log(`Check-in reservation room ${reservationRoomUuid}`);
+    await this.findOneOrThrow(reservationRoomUuid);
+
+    const checkedIn = await this.prisma.hotels_reservations_rooms_v2.update({
+      where: { uuid: reservationRoomUuid },
+      data: {
+        status: 'checked_in',
+        checked_in_at: new Date(),
+      },
+    });
+
+    return this.formatReservationRoom(checkedIn);
+  }
+
+  async checkOut(reservationRoomUuid: string) {
+    this.logger.log(`Check-out reservation room ${reservationRoomUuid}`);
+    await this.findOneOrThrow(reservationRoomUuid);
+
+    const checkedOut = await this.prisma.hotels_reservations_rooms_v2.update({
+      where: { uuid: reservationRoomUuid },
+      data: {
+        status: 'checked_out',
+        checked_out_at: new Date(),
+      },
+    });
+
+    return this.formatReservationRoom(checkedOut);
+  }
+
+  async noShow(reservationRoomUuid: string) {
+    this.logger.log(`No show reservation room ${reservationRoomUuid}`);
+    await this.findOneOrThrow(reservationRoomUuid);
+
+    const noShow = await this.prisma.hotels_reservations_rooms_v2.update({
+      where: { uuid: reservationRoomUuid },
+      data: {
+        status: 'no_show',
+        no_show_at: new Date(),
+      },
+    });
+
+    return this.formatReservationRoom(noShow);
+  }
+
+  async cancel(reservationRoomUuid: string) {
+    this.logger.log(`Cancelling reservation room ${reservationRoomUuid}`);
+    await this.findOneOrThrow(reservationRoomUuid);
+
+    const cancelled = await this.prisma.hotels_reservations_rooms_v2.update({
+      where: { uuid: reservationRoomUuid },
+      data: {
+        status: 'cancelled',
+        cancelled_at: new Date(),
+      },
+    });
+
+    return this.formatReservationRoom(cancelled);
   }
 }

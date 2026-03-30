@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDateString,
   IsIn,
   IsNumber,
   IsOptional,
@@ -70,4 +71,25 @@ export class GetReservationsQueryDto {
   @IsOptional()
   @IsUUID()
   customerUuid?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-01-01',
+  })
+  @IsDateString()
+  @IsOptional()
+  from?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-01-01',
+  })
+  @IsDateString()
+  @IsOptional()
+  to?: string;
+
+  @ApiPropertyOptional({
+    example: 'search',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

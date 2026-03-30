@@ -1004,8 +1004,9 @@ model hotels_reservations_rooms_v2 {
   checked_in_at            DateTime?                  @db.Timestamptz(6)
   checked_out_at           DateTime?                  @db.Timestamptz(6)
   cancelled_at             DateTime?                  @db.Timestamptz(6)
+  no_show_at               DateTime?                  @db.Timestamptz(6)
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
-  reservations             hotels_reservations_v2     @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
+  reservation             hotels_reservations_v2     @relation(fields: [reservation_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
   room                     hotels_rooms               @relation(fields: [room_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([reservation_uuid, room_uuid])
@@ -1019,6 +1020,7 @@ model hotels_reservations_rooms_v2 {
 model hotels_reservations_v2 {
   uuid                         String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hotel_uuid                   String                         @db.Uuid
+  reservation_number           Int                            @default(dbgenerated("nextval('hotels_reservations_v2_reservation_number_seq'::regclass)"))
   customer_uuid                String?                        @db.Uuid
   invoice_uuid                 String?                        @db.Uuid
   source                       String?                        @default("direct")
@@ -1034,6 +1036,7 @@ model hotels_reservations_v2 {
   @@index([customer_uuid], map: "idx_reservations_v2_customer")
   @@index([hotel_uuid], map: "idx_reservations_v2_hotel")
   @@index([invoice_uuid], map: "idx_reservations_v2_invoice")
+  @@unique([reservation_number], map: "ux_hotels_reservations_v2_reservation_number")
   @@schema("public")
 }
 

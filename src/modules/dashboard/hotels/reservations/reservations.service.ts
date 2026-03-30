@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { formatIsoDateOnly } from 'src/common/helpers/format-iso-date-only';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 
@@ -20,55 +21,6 @@ export class ReservationsService {
     return reservation;
   }
 
-  async findAll(options: {
-    hotelUuid: string;
-    page: number;
-    limit: number;
-    orderBy: string;
-    order: string;
-    status?: string;
-    roomUuid?: string;
-    customerUuid?: string;
-  }) {
-    const {
-      hotelUuid,
-      page,
-      limit,
-      orderBy,
-      order,
-      status,
-      roomUuid,
-      customerUuid,
-    } = options;
-    const roomsFilter = {
-      ...(status ? { status } : {}),
-      ...(roomUuid ? { room_uuid: roomUuid } : {}),
-    };
-    const hasRoomsFilter = Object.keys(roomsFilter).length > 0;
-
-    const reservations = await this.prisma.hotels_reservations_v2.findMany({
-      where: {
-        hotel_uuid: hotelUuid,
-        ...(customerUuid ? { customer_uuid: customerUuid } : {}),
-        ...(hasRoomsFilter ? { rooms: { some: roomsFilter } } : {}),
-      },
-      include: {
-        rooms: {
-          ...(hasRoomsFilter ? { where: roomsFilter } : {}),
-          include: { room: true },
-          orderBy: { created_at: 'asc' },
-        },
-        customer: true,
-      },
-      orderBy: { [orderBy]: order },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    const hasMore = reservations.length === limit;
-
-    return { data: reservations, hasMore };
-  }
-
   async findOne(hotelUuid: string, reservationUuid: string) {
     const reservation = await this.prisma.hotels_reservations_v2.findFirst({
       where: { uuid: reservationUuid, hotel_uuid: hotelUuid },
@@ -82,7 +34,18 @@ export class ReservationsService {
       },
     });
 
-    return { data: reservation };
+    return {
+      data: reservation
+        ? {
+            ...reservation,
+            rooms: reservation.rooms.map((r) => ({
+              ...r,
+              check_in_date: formatIsoDateOnly(r.check_in_date),
+              check_out_date: formatIsoDateOnly(r.check_out_date),
+            })),
+          }
+        : null,
+    };
   }
 
   async create(
@@ -147,13 +110,13 @@ export class ReservationsService {
     const reservationRooms =
       await this.prisma.hotels_reservations_rooms_v2.findMany({
         where: {
-          reservations: { hotel_uuid: hotelUuid },
+          reservation: { hotel_uuid: hotelUuid },
           check_in_date: { lte: new Date(to) },
           check_out_date: { gte: new Date(from) },
           ...(status && status !== 'all' ? { status } : {}),
         },
         include: {
-          reservations: {
+          reservation: {
             include: { customer: true },
           },
         },
