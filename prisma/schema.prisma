@@ -1062,7 +1062,7 @@ model hotels_rooms {
   hotels_reservations_rooms          hotels_reservations_rooms[]
   hotels_reservations_rooms_v2       hotels_reservations_rooms_v2[]
   hotels                             hotels                               @relation(fields: [hotel_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "hotels_rooms_hotel_uuid_fkey1")
-  hotels_rooms_types                 hotels_rooms_types?                  @relation(fields: [room_type_uuid], references: [uuid])
+  room_type                          hotels_rooms_types?                  @relation(fields: [room_type_uuid], references: [uuid])
   hotels_rooms_images                hotels_rooms_images[]
   hotels_rooms_reservations          hotels_rooms_reservations[]
   hotels_rooms_reservations_payments hotels_rooms_reservations_payments[]

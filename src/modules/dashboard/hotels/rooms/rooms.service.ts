@@ -18,7 +18,7 @@ export class RoomsService {
         ...dto,
       },
       include: {
-        hotels_rooms_types: true,
+        room_type: true,
         hotels_rooms_images: true,
       },
     });
@@ -43,7 +43,7 @@ export class RoomsService {
         ...searchFilter,
       },
       include: {
-        hotels_rooms_types: true,
+        room_type: true,
         hotels_albums: {
           include: {
             hotels_albums_photos: { orderBy: { position: 'asc' } },
@@ -59,7 +59,7 @@ export class RoomsService {
     const room = await this.prisma.hotels_rooms.findFirst({
       where: { uuid, hotel_uuid: hotelUuid },
       include: {
-        hotels_rooms_types: true,
+        room_type: true,
         hotels_albums: {
           include: {
             hotels_albums_photos: { orderBy: { position: 'asc' } },
@@ -79,7 +79,7 @@ export class RoomsService {
       where: { uuid },
       data: dto,
       include: {
-        hotels_rooms_types: true,
+        room_type: true,
         hotels_rooms_images: true,
       },
     });

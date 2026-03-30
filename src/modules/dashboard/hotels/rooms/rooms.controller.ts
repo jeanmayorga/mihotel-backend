@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { GetRoomsQueryDto } from './dto/get-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -33,6 +33,7 @@ export class RoomsController {
   }
 
   @Get()
+  @ApiParam({ name: 'hotelUuid', type: String })
   @RequirePermissions('rooms:read')
   async findAll(
     @HotelUuid() hotelUuid: string,
