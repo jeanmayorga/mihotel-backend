@@ -245,6 +245,8 @@ export class ReservationRoomsService {
         children_count: dto.children_count ?? 0,
         babies_count: dto.babies_count ?? 0,
         price_per_night: dto.price_per_night,
+        number_of_nights: dto.number_of_nights,
+        total_price: dto.total_price,
       },
     });
 
@@ -294,6 +296,12 @@ export class ReservationRoomsService {
         }),
         ...(dto.price_per_night !== undefined && {
           price_per_night: dto.price_per_night,
+        }),
+        ...(dto.number_of_nights !== undefined && {
+          number_of_nights: dto.number_of_nights,
+        }),
+        ...(dto.total_price !== undefined && {
+          total_price: dto.total_price,
         }),
       },
     });

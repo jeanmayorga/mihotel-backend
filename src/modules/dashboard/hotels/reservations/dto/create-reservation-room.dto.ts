@@ -43,4 +43,14 @@ export class CreateReservationRoomDto {
   @IsNumber()
   @Min(0)
   price_per_night: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(1)
+  number_of_nights: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  total_price: number;
 }

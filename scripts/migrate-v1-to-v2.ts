@@ -14,6 +14,7 @@
  * Flags:
  *   --dry-run  Solo muestra lo que haría, sin insertar nada
  *   --clean-v2 Limpia tablas v2 antes de migrar
+ *   --dry-run-limit=<n> En dry-run, limita registros por bloque (default: 10)
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -28,6 +29,18 @@ if (!DATABASE_URL) {
 
 const dryRun = process.argv.includes('--dry-run');
 const cleanV2 = process.argv.includes('--clean-v2');
+const dryRunLimitArg = process.argv.find((arg) =>
+  arg.startsWith('--dry-run-limit='),
+);
+const dryRunLimitValue = dryRunLimitArg
+  ? Number(dryRunLimitArg.split('=')[1])
+  : undefined;
+const dryRunLimit =
+  dryRun && Number.isFinite(dryRunLimitValue) && (dryRunLimitValue ?? 0) > 0
+    ? dryRunLimitValue
+    : dryRun
+      ? 10
+      : undefined;
 
 const prisma: PrismaClient = new PrismaClient({
   adapter: new PrismaPg({ connectionString: DATABASE_URL }),
@@ -128,6 +141,33 @@ function invoicesV2(client: PrismaClient) {
   ).hotels_invoices_v2;
 }
 
+function calculateNumberOfNights(checkIn: Date, checkOut: Date): number {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const startUtc = Date.UTC(
+    checkIn.getUTCFullYear(),
+    checkIn.getUTCMonth(),
+    checkIn.getUTCDate(),
+  );
+  const endUtc = Date.UTC(
+    checkOut.getUTCFullYear(),
+    checkOut.getUTCMonth(),
+    checkOut.getUTCDate(),
+  );
+  const diff = Math.floor((endUtc - startUtc) / msPerDay);
+  return diff > 0 ? diff : 1;
+}
+
+function applyDryRunLimit<T>(items: T[], label: string): T[] {
+  if (!dryRun || !dryRunLimit || items.length <= dryRunLimit) {
+    return items;
+  }
+
+  console.log(
+    `  DRY RUN: limitando ${label} a ${dryRunLimit} de ${items.length} registros`,
+  );
+  return items.slice(0, dryRunLimit);
+}
+
 async function cleanV2Tables() {
   console.log('\n=== Limpiando tablas v2 ===');
 
@@ -204,7 +244,10 @@ async function migrateReservations() {
     ).map((r) => r.uuid),
   );
 
-  const toMigrate = v1Reservations.filter((r) => !existingV2Uuids.has(r.uuid));
+  const toMigrate = applyDryRunLimit(
+    v1Reservations.filter((r) => !existingV2Uuids.has(r.uuid)),
+    'reservaciones por migrar',
+  );
 
   console.log(
     `  Reservaciones v1: ${v1Reservations.length}, ya en v2: ${existingV2Uuids.size}, por migrar: ${toMigrate.length}`,
@@ -245,8 +288,14 @@ async function migrateReservations() {
       );
 
       if (!alreadyLinked) {
+        const pricePerNight = Number(r.hotels_rooms?.price ?? 0);
+        const numberOfNights = calculateNumberOfNights(
+          r.check_in_date,
+          r.check_out_date,
+        );
+        const totalPrice = pricePerNight * numberOfNights;
         console.log(
-          `    + Room directo: ${r.room_uuid} (precio: ${r.hotels_rooms?.price ?? 0})`,
+          `    + Room directo: ${r.room_uuid} (precio: ${pricePerNight}, noches: ${numberOfNights}, total: ${totalPrice})`,
         );
         await prisma.hotels_reservations_rooms_v2.create({
           data: {
@@ -258,7 +307,9 @@ async function migrateReservations() {
             adults_count: r.adults_count ? Number(r.adults_count) : 1,
             children_count: r.children_count ? Number(r.children_count) : 0,
             babies_count: r.babies_count ? Number(r.babies_count) : 0,
-            price_per_night: r.hotels_rooms?.price ?? 0,
+            price_per_night: pricePerNight,
+            number_of_nights: numberOfNights,
+            total_price: totalPrice,
             created_at: r.created_at,
           },
         });
@@ -287,9 +338,15 @@ async function migrateReservations() {
           where: { uuid: room.room_uuid },
           select: { price: true },
         });
+        const pricePerNight = Number(roomData?.price ?? 0);
+        const numberOfNights = calculateNumberOfNights(
+          r.check_in_date,
+          r.check_out_date,
+        );
+        const totalPrice = pricePerNight * numberOfNights;
 
         console.log(
-          `    + Room pivot: ${room.room_uuid} (precio: ${roomData?.price ?? 0})`,
+          `    + Room pivot: ${room.room_uuid} (precio: ${pricePerNight}, noches: ${numberOfNights}, total: ${totalPrice})`,
         );
         await prisma.hotels_reservations_rooms_v2.create({
           data: {
@@ -301,7 +358,9 @@ async function migrateReservations() {
             adults_count: r.adults_count ? Number(r.adults_count) : 1,
             children_count: r.children_count ? Number(r.children_count) : 0,
             babies_count: r.babies_count ? Number(r.babies_count) : 0,
-            price_per_night: roomData?.price ?? 0,
+            price_per_night: pricePerNight,
+            number_of_nights: numberOfNights,
+            total_price: totalPrice,
             created_at: r.created_at,
           },
         });
@@ -339,7 +398,10 @@ async function migrateInvoices() {
     ).map((i) => i.uuid),
   );
 
-  const toMigrate = v1Invoices.filter((i) => !existingV2Uuids.has(i.uuid));
+  const toMigrate = applyDryRunLimit(
+    v1Invoices.filter((i) => !existingV2Uuids.has(i.uuid)),
+    'invoices por migrar',
+  );
 
   // Contar payments que ya existen en v2 para invoices ya migradas
   const existingV2PaymentCount =
@@ -352,7 +414,11 @@ async function migrateInvoices() {
 
   // Para invoices ya migradas, verificar si faltan payments
   let missingPayments = 0;
-  for (const inv of v1Invoices.filter((i) => existingV2Uuids.has(i.uuid))) {
+  const existingInvoicesToCheck = applyDryRunLimit(
+    v1Invoices.filter((i) => existingV2Uuids.has(i.uuid)),
+    'invoices ya migradas para revisar payments faltantes',
+  );
+  for (const inv of existingInvoicesToCheck) {
     for (const payment of inv.hotels_invoices_payments) {
       if (!payment.invoice_uuid) continue;
       const exists = await prisma.hotels_invoices_payments_v2.findFirst({
@@ -559,14 +625,17 @@ async function migrateRefunds() {
   );
 
   // Buscar reservaciones v1 con status refunded
-  const refundedReservations = await prisma.hotels_reservations.findMany({
-    where: { status: 'refunded' },
-    include: {
-      hotels_invoices: {
-        include: { hotels_invoices_payments: true },
+  const refundedReservations = applyDryRunLimit(
+    await prisma.hotels_reservations.findMany({
+      where: { status: 'refunded' },
+      include: {
+        hotels_invoices: {
+          include: { hotels_invoices_payments: true },
+        },
       },
-    },
-  });
+    }),
+    'reservaciones refunded',
+  );
 
   console.log(
     `  Reservaciones con status "refunded": ${refundedReservations.length}`,
@@ -587,6 +656,10 @@ async function migrateRefunds() {
     // Actualizar status de rooms en v2 a cancelled
     const v2Rooms = await prisma.hotels_reservations_rooms_v2.findMany({
       where: { reservation_uuid: reservation.uuid },
+      select: {
+        uuid: true,
+        status: true,
+      },
     });
 
     for (const room of v2Rooms) {
