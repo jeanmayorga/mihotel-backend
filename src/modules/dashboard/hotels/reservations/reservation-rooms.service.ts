@@ -104,6 +104,13 @@ export class ReservationRoomsService {
     //check in
     const checkIn = { gte: fromDate, lte: toDate };
     const checkInFilter = checkIn ? { check_in_date: checkIn } : undefined;
+    const sortDirection: Prisma.SortOrder = order === 'asc' ? 'asc' : 'desc';
+    const orderByFields: Prisma.hotels_reservations_rooms_v2OrderByWithRelationInput[] =
+      [
+        { [orderBy]: sortDirection },
+        { created_at: sortDirection },
+        { uuid: sortDirection },
+      ];
 
     //customer uuid
     const customerUuidFilter = customerUuid
@@ -150,7 +157,7 @@ export class ReservationRoomsService {
             },
           },
         },
-        orderBy: { [orderBy]: order },
+        orderBy: orderByFields,
         skip: (page - 1) * limit,
         take: limit,
       });
