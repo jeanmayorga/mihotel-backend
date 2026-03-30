@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { formatIsoDateOnly } from 'src/common/helpers/format-iso-date-only';
+import { formatIsoDateOnly } from '../../../../common/helpers/format-iso-date-only';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 

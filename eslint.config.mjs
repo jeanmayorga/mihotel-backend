@@ -40,6 +40,18 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'off',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['src/*', 'src/**'],
+              message:
+                'Do not use "src/..." absolute imports; use relative imports instead.',
+            },
+          ],
+        },
+      ],
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },

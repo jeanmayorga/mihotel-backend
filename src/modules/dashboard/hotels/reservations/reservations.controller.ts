@@ -26,9 +26,9 @@ import {
   GetReservationsQueryDto,
   UpdateReservationRoomStatusDto,
 } from './reservations.dto';
-import { RequirePermissions } from 'src/common/decorators/require-permissions.decorator';
-import { PermissionsGuard } from 'src/common/guards/permissions.guard';
-import { HotelTimezone } from 'src/common/decorators/hotel-timezone.decorator';
+import { RequirePermissions } from '../../../../common/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../../../common/guards/permissions.guard';
+import { HotelTimezone } from '../../../../common/decorators/hotel-timezone.decorator';
 
 @ApiTags('Dashboard / Reservations')
 @ApiBearerAuth()

@@ -3,7 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateReservationRoomDto } from './dto/create-reservation-room.dto';
 import { ReservationsService } from './reservations.service';
 import { Prisma } from '@prisma/client';
-import { formatIsoDateOnly } from 'src/common/helpers/format-iso-date-only';
+import { formatIsoDateOnly } from '../../../../common/helpers/format-iso-date-only';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { fromZonedTime } from 'date-fns-tz';
 

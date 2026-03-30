@@ -1,4 +1,4 @@
-import { formatIsoDateOnly } from 'src/common/helpers/format-iso-date-only';
+import { formatIsoDateOnly } from '../../../../common/helpers/format-iso-date-only';
 
 type CalendarReservationRecord = Record<string, unknown> & {
   check_in_date: Date;
