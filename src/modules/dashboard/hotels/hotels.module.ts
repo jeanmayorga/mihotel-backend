@@ -10,11 +10,13 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { PlansModule } from '../../plans/plans.module';
 import { ProductsModule } from './products/products.module';
 import { AccountsModule } from './accounts/accounts.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
     AccountsModule,
     AlbumsModule,
+    CustomersModule,
     InvoicesModule,
     RoomTypesModule,
     RoomsModule,

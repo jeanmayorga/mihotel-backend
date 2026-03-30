@@ -1,7 +1,8 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { QueryMode } from 'generated/prisma/internal/prismaNamespace';
 
 @Injectable()
 export class RoomsService {
@@ -25,19 +26,21 @@ export class RoomsService {
 
   async findAll(options: {
     hotelUuid: string;
-    page: number;
-    limit: number;
     orderBy: string;
     order: string;
     search?: string;
   }) {
-    const { hotelUuid, page, limit, orderBy, order, search = '' } = options;
-    this.logger.log(`rooms-service -> findAll -> hotelUuid: ${hotelUuid}`);
+    const { hotelUuid, orderBy, order, search } = options;
+
+    // search filter
+    const searchFilter = search
+      ? { name: { contains: search, mode: QueryMode.insensitive } }
+      : {};
 
     const rooms = await this.prisma.hotels_rooms.findMany({
       where: {
         hotel_uuid: hotelUuid,
-        name: { contains: search, mode: 'insensitive' },
+        ...searchFilter,
       },
       include: {
         hotels_rooms_types: true,
@@ -48,18 +51,11 @@ export class RoomsService {
         },
       },
       orderBy: { [orderBy]: order },
-      skip: (page - 1) * limit,
-      take: limit,
     });
-    const hasMore = rooms.length === limit;
-
-    return { data: rooms, hasMore };
+    return rooms;
   }
 
   async findOne(hotelUuid: string, uuid: string) {
-    this.logger.log(
-      `rooms-service -> findOne -> hotelUuid: ${hotelUuid}, uuid: ${uuid}`,
-    );
     const room = await this.prisma.hotels_rooms.findFirst({
       where: { uuid, hotel_uuid: hotelUuid },
       include: {
@@ -71,10 +67,6 @@ export class RoomsService {
         },
       },
     });
-
-    if (!room) {
-      throw new NotFoundException(`Room ${uuid} not found`);
-    }
 
     return room;
   }
