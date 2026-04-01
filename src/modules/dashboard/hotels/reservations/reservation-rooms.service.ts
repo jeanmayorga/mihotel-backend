@@ -1,11 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { CreateReservationRoomDto } from './dto/create-reservation-room.dto';
 import { ReservationsService } from './reservations.service';
 import { Prisma } from '@prisma/client';
 import { formatIsoDateOnly } from '../../../../common/helpers/format-iso-date-only';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { fromZonedTime } from 'date-fns-tz';
+import { CreateReservationRoomDto } from './reservations.dto';
 
 @Injectable()
 export class ReservationRoomsService {
@@ -224,26 +224,24 @@ export class ReservationRoomsService {
     return reservationRoom;
   }
 
-  async addRoom(
+  async create(
     hotelUuid: string,
     reservationUuid: string,
     dto: CreateReservationRoomDto,
   ) {
-    this.logger.log(`Adding room to reservation ${reservationUuid}`);
     await this.reservationsService.getReservationOrThrow(
       hotelUuid,
       reservationUuid,
     );
-
     const created = await this.prisma.hotels_reservations_rooms_v2.create({
       data: {
         reservation_uuid: reservationUuid,
         room_uuid: dto.room_uuid,
-        check_in_date: new Date(dto.check_in_date),
-        check_out_date: new Date(dto.check_out_date),
-        adults_count: dto.adults_count ?? 1,
-        children_count: dto.children_count ?? 0,
-        babies_count: dto.babies_count ?? 0,
+        check_in_date: dto.check_in_date,
+        check_out_date: dto.check_out_date,
+        adults_count: dto.adults_count,
+        children_count: dto.children_count,
+        babies_count: dto.babies_count,
         price_per_night: dto.price_per_night,
         number_of_nights: dto.number_of_nights,
         total_price: dto.total_price,
@@ -253,30 +251,18 @@ export class ReservationRoomsService {
     return this.formatReservationRoom(created);
   }
 
-  async updateRoom(
+  async update(
     hotelUuid: string,
     reservationUuid: string,
-    roomUuid: string,
+    reservationRoomUuid: string,
     dto: Partial<CreateReservationRoomDto>,
   ) {
-    this.logger.log(
-      `Updating room ${roomUuid} in reservation ${reservationUuid}`,
-    );
     await this.reservationsService.getReservationOrThrow(
       hotelUuid,
       reservationUuid,
     );
-
-    const current = await this.prisma.hotels_reservations_rooms_v2.findFirst({
-      where: { uuid: roomUuid, reservation_uuid: reservationUuid },
-    });
-
-    if (!current) {
-      throw new NotFoundException(`Reservation room ${roomUuid} not found`);
-    }
-
     const updated = await this.prisma.hotels_reservations_rooms_v2.update({
-      where: { uuid: roomUuid },
+      where: { uuid: reservationRoomUuid },
       data: {
         ...(dto.room_uuid !== undefined && { room_uuid: dto.room_uuid }),
         ...(dto.check_in_date !== undefined && {
@@ -300,21 +286,33 @@ export class ReservationRoomsService {
         ...(dto.number_of_nights !== undefined && {
           number_of_nights: dto.number_of_nights,
         }),
-        ...(dto.total_price !== undefined && {
-          total_price: dto.total_price,
-        }),
+        ...(dto.total_price !== undefined && { total_price: dto.total_price }),
       },
     });
 
     return this.formatReservationRoom(updated);
   }
 
-  async remove(reservationRoomUuid: string) {
-    this.logger.log(`Removing reservation room ${reservationRoomUuid}`);
-    await this.findOneOrThrow(reservationRoomUuid);
+  async remove(
+    hotelUuid: string,
+    reservationUuid: string,
+    reservationRoomUuid: string,
+  ) {
+    await this.reservationsService.getReservationOrThrow(
+      hotelUuid,
+      reservationUuid,
+    );
     await this.prisma.hotels_reservations_rooms_v2.delete({
       where: { uuid: reservationRoomUuid },
     });
+    const missingReservationRooms =
+      await this.prisma.hotels_reservations_rooms_v2.findMany({
+        where: { reservation_uuid: reservationUuid },
+      });
+    if (missingReservationRooms.length === 0) {
+      await this.reservationsService.delete(hotelUuid, reservationUuid);
+    }
+    return { data: 'Reservation room removed successfully' };
   }
 
   async pending(reservationRoomUuid: string) {

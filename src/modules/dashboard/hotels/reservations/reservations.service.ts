@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { formatIsoDateOnly } from '../../../../common/helpers/format-iso-date-only';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
@@ -8,6 +9,29 @@ export class ReservationsService {
   private readonly logger = new Logger(ReservationsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  private formatReservation(
+    reservation: Prisma.hotels_reservations_v2GetPayload<{
+      include: {
+        rooms: {
+          include: { room: true };
+        };
+        customer: true;
+        invoice: true;
+      };
+    }> | null,
+  ) {
+    if (!reservation) return null;
+
+    return {
+      ...reservation,
+      rooms: reservation.rooms.map((r) => ({
+        ...r,
+        check_in_date: formatIsoDateOnly(r.check_in_date),
+        check_out_date: formatIsoDateOnly(r.check_out_date),
+      })),
+    };
+  }
 
   async getReservationOrThrow(hotelUuid: string, reservationUuid: string) {
     const reservation = await this.prisma.hotels_reservations_v2.findFirst({
@@ -35,17 +59,14 @@ export class ReservationsService {
     });
 
     return {
-      data: reservation
-        ? {
-            ...reservation,
-            rooms: reservation.rooms.map((r) => ({
-              ...r,
-              check_in_date: formatIsoDateOnly(r.check_in_date),
-              check_out_date: formatIsoDateOnly(r.check_out_date),
-            })),
-          }
-        : null,
+      data: this.formatReservation(reservation),
     };
+  }
+
+  async delete(hotelUuid: string, reservationUuid: string) {
+    await this.prisma.hotels_reservations_v2.delete({
+      where: { uuid: reservationUuid, hotel_uuid: hotelUuid },
+    });
   }
 
   async create(
@@ -72,21 +93,9 @@ export class ReservationsService {
     reservationUuid: string,
     dto: CreateReservationDto,
   ) {
-    this.logger.log(`Updating reservation ${reservationUuid}`);
-    await this.getReservationOrThrow(hotelUuid, reservationUuid);
-
     return this.prisma.hotels_reservations_v2.update({
-      where: { uuid: reservationUuid },
-      data: {
-        ...(dto.customer_uuid !== undefined && {
-          customer_uuid: dto.customer_uuid,
-        }),
-        ...(dto.invoice_uuid !== undefined && {
-          invoice_uuid: dto.invoice_uuid,
-        }),
-        ...(dto.source !== undefined && { source: dto.source }),
-        ...(dto.notes !== undefined && { notes: dto.notes }),
-      },
+      where: { uuid: reservationUuid, hotel_uuid: hotelUuid },
+      data: dto,
     });
   }
 
@@ -139,13 +148,5 @@ export class ReservationsService {
     }
 
     return { data: Array.from(roomsMap.values()) };
-  }
-
-  async remove(hotelUuid: string, reservationUuid: string) {
-    this.logger.log(`Deleting reservation ${reservationUuid}`);
-    await this.getReservationOrThrow(hotelUuid, reservationUuid);
-    await this.prisma.hotels_reservations_v2.delete({
-      where: { uuid: reservationUuid },
-    });
   }
 }

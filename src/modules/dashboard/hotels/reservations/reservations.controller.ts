@@ -1,9 +1,9 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -24,7 +24,10 @@ import { ReservationRoomsService } from './reservation-rooms.service';
 import {
   GetSummaryQueryDto,
   GetReservationsQueryDto,
-  UpdateReservationRoomStatusDto,
+  UpdateReservationDto,
+  UpdateReservationStatusDto,
+  CreateReservationRoomDto,
+  UpdateReservationRoomDto,
 } from './reservations.dto';
 import { RequirePermissions } from '../../../../common/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../../../../common/guards/permissions.guard';
@@ -40,6 +43,21 @@ export class ReservationsController {
     private readonly reservationsService: ReservationsService,
     private readonly reservationRoomsService: ReservationRoomsService,
   ) {}
+
+  @Get('calendar')
+  async calendar(
+    @HotelUuid() hotelUuid: string,
+    @Query() query: GetCalendarQueryDto,
+  ) {
+    const response = await this.reservationsService.calendar({
+      hotelUuid,
+      from: query.from,
+      to: query.to,
+      status: query.status,
+    });
+
+    return presentReservationsCalendar(response);
+  }
 
   @Get('summary')
   @RequirePermissions('reservations:read')
@@ -89,30 +107,26 @@ export class ReservationsController {
     });
   }
 
-  @Get('calendar')
-  async calendar(
-    @HotelUuid() hotelUuid: string,
-    @Query() query: GetCalendarQueryDto,
-  ) {
-    const response = await this.reservationsService.calendar({
-      hotelUuid,
-      from: query.from,
-      to: query.to,
-      status: query.status,
-    });
-
-    return presentReservationsCalendar(response);
-  }
-
   @Get(':reservationUuid')
-  findOne(
+  @RequirePermissions('reservations:read')
+  async findOne(
     @HotelUuid() hotelUuid: string,
     @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
   ) {
     return this.reservationsService.findOne(hotelUuid, reservationUuid);
   }
 
+  @Delete(':reservationUuid')
+  @RequirePermissions('reservations:delete')
+  delete(
+    @HotelUuid() hotelUuid: string,
+    @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
+  ) {
+    return this.reservationsService.delete(hotelUuid, reservationUuid);
+  }
+
   @Post()
+  @RequirePermissions('reservations:create')
   create(
     @HotelUuid() hotelUuid: string,
     @AuthUserUuid() authUserUuid: string,
@@ -122,47 +136,99 @@ export class ReservationsController {
   }
 
   @Patch(':reservationUuid')
-  update(
+  @RequirePermissions('reservations:update')
+  async update(
     @HotelUuid() hotelUuid: string,
     @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
-    @Body() dto: CreateReservationDto,
+    @Body() dto: UpdateReservationDto,
   ) {
-    return this.reservationsService.update(hotelUuid, reservationUuid, dto);
+    const reservation = await this.reservationsService.update(
+      hotelUuid,
+      reservationUuid,
+      dto,
+    );
+    return { data: reservation };
   }
 
-  @Delete('rooms/:reservationRoomUuid')
+  @Patch(':reservationUuid/status')
+  @RequirePermissions('reservations:update')
+  async updateStatus(
+    @HotelUuid() hotelUuid: string,
+    @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
+    @Body() dto: UpdateReservationStatusDto,
+  ) {
+    const reservationRoomsUuids = dto.reservation_room_uuids;
+    const status = dto.status;
+
+    const reservation = await this.reservationsService.findOne(
+      hotelUuid,
+      reservationUuid,
+    );
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+
+    for (const reservationRoomUuid of reservationRoomsUuids) {
+      if (status === 'pending') {
+        await this.reservationRoomsService.pending(reservationRoomUuid);
+      }
+      if (status === 'confirmed') {
+        await this.reservationRoomsService.confirm(reservationRoomUuid);
+      }
+      if (status === 'checked_in') {
+        await this.reservationRoomsService.checkIn(reservationRoomUuid);
+      }
+      if (status === 'checked_out') {
+        await this.reservationRoomsService.checkOut(reservationRoomUuid);
+      }
+      if (status === 'no_show') {
+        await this.reservationRoomsService.noShow(reservationRoomUuid);
+      }
+      if (status === 'cancelled') {
+        await this.reservationRoomsService.cancel(reservationRoomUuid);
+      }
+    }
+
+    return { data: 'Status updated successfully' };
+  }
+
+  @Post(':reservationUuid/rooms')
+  @RequirePermissions('reservations:create')
+  createReservationRoom(
+    @HotelUuid() hotelUuid: string,
+    @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
+    @Body() dto: CreateReservationRoomDto,
+  ) {
+    return this.reservationRoomsService.create(hotelUuid, reservationUuid, dto);
+  }
+
+  @Patch(':reservationUuid/rooms/:reservationRoomUuid')
+  @RequirePermissions('reservations:update')
+  updateReservationRoom(
+    @HotelUuid() hotelUuid: string,
+    @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
+    @Param('reservationRoomUuid', ParseUUIDPipe) reservationRoomUuid: string,
+    @Body() dto: UpdateReservationRoomDto,
+  ) {
+    return this.reservationRoomsService.update(
+      hotelUuid,
+      reservationUuid,
+      reservationRoomUuid,
+      dto,
+    );
+  }
+
+  @Delete(':reservationUuid/rooms/:reservationRoomUuid')
   @RequirePermissions('reservations:delete')
   remove(
+    @HotelUuid() hotelUuid: string,
+    @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
     @Param('reservationRoomUuid', ParseUUIDPipe) reservationRoomUuid: string,
   ) {
-    return this.reservationRoomsService.remove(reservationRoomUuid);
-  }
-
-  @Patch('rooms/:reservationRoomUuid/status')
-  @RequirePermissions('reservations:update')
-  confirm(
-    @Param('reservationRoomUuid', ParseUUIDPipe) reservationRoomUuid: string,
-    @Body() dto: UpdateReservationRoomStatusDto,
-  ) {
-    const status = dto.status;
-    if (status === 'pending') {
-      return this.reservationRoomsService.pending(reservationRoomUuid);
-    }
-    if (status === 'confirmed') {
-      return this.reservationRoomsService.confirm(reservationRoomUuid);
-    }
-    if (status === 'checked_in') {
-      return this.reservationRoomsService.checkIn(reservationRoomUuid);
-    }
-    if (status === 'checked_out') {
-      return this.reservationRoomsService.checkOut(reservationRoomUuid);
-    }
-    if (status === 'no_show') {
-      return this.reservationRoomsService.noShow(reservationRoomUuid);
-    }
-    if (status === 'cancelled') {
-      return this.reservationRoomsService.cancel(reservationRoomUuid);
-    }
-    throw new BadRequestException('Invalid status: ' + status);
+    return this.reservationRoomsService.remove(
+      hotelUuid,
+      reservationUuid,
+      reservationRoomUuid,
+    );
   }
 }
