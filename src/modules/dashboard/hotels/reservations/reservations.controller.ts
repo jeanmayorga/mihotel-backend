@@ -220,7 +220,7 @@ export class ReservationsController {
 
   @Delete(':reservationUuid/rooms/:reservationRoomUuid')
   @RequirePermissions('reservations:delete')
-  remove(
+  removeReservationRoom(
     @HotelUuid() hotelUuid: string,
     @Param('reservationUuid', ParseUUIDPipe) reservationUuid: string,
     @Param('reservationRoomUuid', ParseUUIDPipe) reservationRoomUuid: string,
