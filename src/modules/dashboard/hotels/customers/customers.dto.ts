@@ -6,6 +6,8 @@ import {
   IsPositive,
   IsIn,
   IsDateString,
+  IsArray,
+  IsUUID,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
@@ -134,4 +136,19 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsDateString()
   verified_cedula_at?: string;
+}
+
+export class CustomersSummaryResponseDto {
+  total: number;
+  new_this_month: number;
+  new_last_month: number;
+}
+
+export class DeleteCustomersDto {
+  @ApiPropertyOptional({
+    example: ['b7b6f4f5-3ec0-4a11-a6fd-4fd09ab0f8f7'],
+  })
+  @IsArray()
+  @IsUUID(4, { each: true })
+  customer_uuids: string[];
 }

@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateCustomerDto, UpdateCustomerDto } from './customers.dto';
+import { startOfMonth, subMonths } from 'date-fns';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class CustomersService {
@@ -89,6 +91,44 @@ export class CustomersService {
       data: payload,
     });
     return customer;
+  }
+
+  async getSummary(options: { hotelUuid: string; hotelTimezone: string }) {
+    const { hotelUuid, hotelTimezone } = options;
+
+    const nowInHotelTz = toZonedTime(new Date(), hotelTimezone);
+    const startOfThisMonth = fromZonedTime(
+      startOfMonth(nowInHotelTz),
+      hotelTimezone,
+    );
+    const startOfLastMonth = fromZonedTime(
+      startOfMonth(subMonths(nowInHotelTz, 1)),
+      hotelTimezone,
+    );
+
+    const [total, newThisMonth, newLastMonth] = await Promise.all([
+      this.prisma.hotels_customers.count({
+        where: { hotel_uuid: hotelUuid },
+      }),
+      this.prisma.hotels_customers.count({
+        where: {
+          hotel_uuid: hotelUuid,
+          created_at: { gte: startOfThisMonth },
+        },
+      }),
+      this.prisma.hotels_customers.count({
+        where: {
+          hotel_uuid: hotelUuid,
+          created_at: { gte: startOfLastMonth, lt: startOfThisMonth },
+        },
+      }),
+    ]);
+
+    return {
+      total,
+      new_this_month: newThisMonth,
+      new_last_month: newLastMonth,
+    };
   }
 
   async delete(options: { customerUuid: string; hotelUuid: string }) {

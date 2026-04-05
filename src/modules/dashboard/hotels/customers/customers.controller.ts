@@ -15,10 +15,13 @@ import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AuthRequiredGuard } from '../../../../common/guards/auth-required.guard';
 import { AccountRequiredGuard } from '../../../../common/guards/account-required.guard';
 import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
+import { HotelTimezone } from '../../../../common/decorators/hotel-timezone.decorator';
 import { PermissionsGuard } from '../../../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../../../common/decorators/require-permissions.decorator';
 import {
   CreateCustomerDto,
+  CustomersSummaryResponseDto,
+  DeleteCustomersDto,
   GetCustomersQueryDto,
   UpdateCustomerDto,
 } from './customers.dto';
@@ -44,6 +47,19 @@ export class CustomersController {
       ...query,
     });
     return customers;
+  }
+
+  @Get('summary')
+  @RequirePermissions('customers:read')
+  async getSummary(
+    @HotelUuid() hotelUuid: string,
+    @HotelTimezone() hotelTimezone: string,
+  ): Promise<{ data: CustomersSummaryResponseDto }> {
+    const summary = await this.customersService.getSummary({
+      hotelUuid,
+      hotelTimezone,
+    });
+    return { data: summary };
   }
 
   @Get(':customerUuid')
@@ -88,16 +104,18 @@ export class CustomersController {
     return { data: customer };
   }
 
-  @Delete(':customerUuid')
+  @Delete('/bulk')
   @RequirePermissions('customers:delete')
   @HttpCode(204)
   async delete(
     @HotelUuid() hotelUuid: string,
-    @Param('customerUuid') customerUuid: string,
+    @Body() body: DeleteCustomersDto,
   ) {
-    await this.customersService.delete({
-      hotelUuid,
-      customerUuid,
-    });
+    for (const customerUuid of body.customer_uuids) {
+      await this.customersService.delete({
+        hotelUuid,
+        customerUuid,
+      });
+    }
   }
 }
