@@ -5,7 +5,7 @@ import {
   IsString,
   IsPositive,
   IsIn,
-  IsUUID,
+  IsDateString,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
@@ -44,10 +44,94 @@ export class GetCustomersQueryDto {
   search?: string;
 }
 
-export class GetCustomerParamsDto {
-  @ApiPropertyOptional({
-    example: 'b7b6f4f5-3ec0-4a11-a6fd-4fd09ab0f8f7',
-  })
-  @IsUUID()
-  customerUuid: string;
+export class CreateCustomerDto {
+  @ApiPropertyOptional()
+  @IsString()
+  full_name: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  email: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  document: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  document_id: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  phone_country_code: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  phone: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  verifed_whatsapp_at?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  verified_cedula_at?: string;
+}
+
+export class UpdateCustomerDto {
+  @ApiPropertyOptional()
+  @IsString()
+  full_name: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  email: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  document: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  document_id: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  phone_country_code: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  phone: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  verifed_whatsapp_at?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  verified_cedula_at?: string;
 }

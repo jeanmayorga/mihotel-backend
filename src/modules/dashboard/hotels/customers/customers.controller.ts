@@ -1,8 +1,13 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Logger,
   Param,
+  Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -12,7 +17,11 @@ import { AccountRequiredGuard } from '../../../../common/guards/account-required
 import { HotelUuid } from '../../../../common/decorators/hotel-uuid.decorator';
 import { PermissionsGuard } from '../../../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../../../common/decorators/require-permissions.decorator';
-import { GetCustomerParamsDto, GetCustomersQueryDto } from './customers.dto';
+import {
+  CreateCustomerDto,
+  GetCustomersQueryDto,
+  UpdateCustomerDto,
+} from './customers.dto';
 import { CustomersService } from './customers.service';
 
 @ApiTags('Dashboard / Hotel Customers')
@@ -41,12 +50,54 @@ export class CustomersController {
   @RequirePermissions('customers:read')
   async findOne(
     @HotelUuid() hotelUuid: string,
-    @Param() params: GetCustomerParamsDto,
+    @Param('customerUuid') customerUuid: string,
   ) {
     const customer = await this.customersService.findOne({
       hotelUuid,
-      customerUuid: params.customerUuid,
+      customerUuid,
     });
     return { data: customer };
+  }
+
+  @Post()
+  @RequirePermissions('customers:create')
+  async create(
+    @HotelUuid() hotelUuid: string,
+    @Body() body: CreateCustomerDto,
+  ) {
+    const customer = await this.customersService.create({
+      hotelUuid,
+      payload: body,
+    });
+    return { data: customer };
+  }
+
+  @Put(':customerUuid')
+  @RequirePermissions('customers:update')
+  async update(
+    @HotelUuid() hotelUuid: string,
+    @Param('customerUuid') customerUuid: string,
+    @Body() body: UpdateCustomerDto,
+  ) {
+    const customer = await this.customersService.update({
+      hotelUuid,
+      customerUuid,
+      payload: body,
+    });
+
+    return { data: customer };
+  }
+
+  @Delete(':customerUuid')
+  @RequirePermissions('customers:delete')
+  @HttpCode(204)
+  async delete(
+    @HotelUuid() hotelUuid: string,
+    @Param('customerUuid') customerUuid: string,
+  ) {
+    await this.customersService.delete({
+      hotelUuid,
+      customerUuid,
+    });
   }
 }

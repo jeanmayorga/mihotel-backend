@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { CreateCustomerDto, UpdateCustomerDto } from './customers.dto';
 
 @Injectable()
 export class CustomersService {
@@ -61,5 +62,42 @@ export class CustomersService {
     });
 
     return customer;
+  }
+
+  async create(options: { hotelUuid: string; payload: CreateCustomerDto }) {
+    const { hotelUuid, payload } = options;
+    const customer = await this.prisma.hotels_customers.create({
+      data: {
+        hotel_uuid: hotelUuid,
+        ...payload,
+      },
+    });
+    return customer;
+  }
+
+  async update(options: {
+    hotelUuid: string;
+    customerUuid: string;
+    payload: UpdateCustomerDto;
+  }) {
+    const { hotelUuid, customerUuid, payload } = options;
+    const customer = await this.prisma.hotels_customers.update({
+      where: {
+        uuid: customerUuid,
+        hotel_uuid: hotelUuid,
+      },
+      data: payload,
+    });
+    return customer;
+  }
+
+  async delete(options: { customerUuid: string; hotelUuid: string }) {
+    const { customerUuid, hotelUuid } = options;
+    await this.prisma.hotels_customers.delete({
+      where: {
+        uuid: customerUuid,
+        hotel_uuid: hotelUuid,
+      },
+    });
   }
 }
