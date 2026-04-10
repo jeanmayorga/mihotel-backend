@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateCustomerDto, UpdateCustomerDto } from './customers.dto';
@@ -17,6 +22,7 @@ export class CustomersService {
     orderBy?: string;
     order?: string;
     search?: string;
+    deleted?: boolean;
   }) {
     const {
       hotelUuid,
@@ -25,6 +31,7 @@ export class CustomersService {
       orderBy = 'created_at',
       order = 'desc',
       search,
+      deleted = false,
     } = options;
 
     //customer search
@@ -37,9 +44,15 @@ export class CustomersService {
         }
       : {};
 
+    // deleted filter
+    const deletedAtFilter = deleted
+      ? { deleted_at: { not: null } }
+      : { deleted_at: null };
+
     const customers = await this.prisma.hotels_customers.findMany({
       where: {
         hotel_uuid: hotelUuid,
+        ...deletedAtFilter,
         ...searchCustomerFilter,
       },
       orderBy: { [orderBy]: order },
@@ -60,6 +73,7 @@ export class CustomersService {
       where: {
         uuid: customerUuid,
         hotel_uuid: hotelUuid,
+        deleted_at: null,
       },
     });
 
@@ -83,14 +97,21 @@ export class CustomersService {
     payload: UpdateCustomerDto;
   }) {
     const { hotelUuid, customerUuid, payload } = options;
-    const customer = await this.prisma.hotels_customers.update({
+    const active = await this.prisma.hotels_customers.findFirst({
       where: {
         uuid: customerUuid,
         hotel_uuid: hotelUuid,
+        deleted_at: null,
       },
+      select: { uuid: true },
+    });
+    if (!active) {
+      throw new NotFoundException('Customer not found');
+    }
+    return this.prisma.hotels_customers.update({
+      where: { uuid: customerUuid },
       data: payload,
     });
-    return customer;
   }
 
   async getSummary(options: { hotelUuid: string; hotelTimezone: string }) {
@@ -106,20 +127,28 @@ export class CustomersService {
       hotelTimezone,
     );
 
-    const [total, newThisMonth, newLastMonth] = await Promise.all([
+    const [total, newThisMonth, newLastMonth, deleted] = await Promise.all([
       this.prisma.hotels_customers.count({
-        where: { hotel_uuid: hotelUuid },
+        where: { hotel_uuid: hotelUuid, deleted_at: null },
       }),
       this.prisma.hotels_customers.count({
         where: {
           hotel_uuid: hotelUuid,
+          deleted_at: null,
           created_at: { gte: startOfThisMonth },
         },
       }),
       this.prisma.hotels_customers.count({
         where: {
           hotel_uuid: hotelUuid,
+          deleted_at: null,
           created_at: { gte: startOfLastMonth, lt: startOfThisMonth },
+        },
+      }),
+      this.prisma.hotels_customers.count({
+        where: {
+          hotel_uuid: hotelUuid,
+          deleted_at: { not: null },
         },
       }),
     ]);
@@ -128,16 +157,58 @@ export class CustomersService {
       total,
       new_this_month: newThisMonth,
       new_last_month: newLastMonth,
+      deleted: deleted,
     };
   }
 
-  async delete(options: { customerUuid: string; hotelUuid: string }) {
-    const { customerUuid, hotelUuid } = options;
-    await this.prisma.hotels_customers.delete({
+  async restore(options: { customerUuids: string[]; hotelUuid: string }) {
+    const { customerUuids, hotelUuid } = options;
+    const { count } = await this.prisma.hotels_customers.updateMany({
       where: {
-        uuid: customerUuid,
+        uuid: { in: customerUuids },
+        hotel_uuid: hotelUuid,
+        deleted_at: { not: null },
+      },
+      data: { deleted_at: null },
+    });
+
+    if (count === 0) {
+      throw new NotFoundException('Some customers not found');
+    }
+
+    return { count };
+  }
+
+  async softDelete(options: { customerUuids: string[]; hotelUuid: string }) {
+    const { customerUuids, hotelUuid } = options;
+    const { count } = await this.prisma.hotels_customers.updateMany({
+      where: {
+        uuid: { in: customerUuids },
+        hotel_uuid: hotelUuid,
+        deleted_at: null,
+      },
+      data: { deleted_at: new Date() },
+    });
+    if (count === 0) {
+      throw new BadRequestException('Some customers not found');
+    }
+    return { count };
+  }
+
+  async permanentDelete(options: {
+    customerUuids: string[];
+    hotelUuid: string;
+  }) {
+    const { customerUuids, hotelUuid } = options;
+    const { count } = await this.prisma.hotels_customers.deleteMany({
+      where: {
+        uuid: { in: customerUuids },
         hotel_uuid: hotelUuid,
       },
     });
+    if (count === 0) {
+      throw new NotFoundException('Some customers not found');
+    }
+    return { count };
   }
 }

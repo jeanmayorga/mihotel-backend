@@ -8,9 +8,10 @@ import {
   IsDateString,
   IsArray,
   IsUUID,
+  IsBoolean,
 } from 'class-validator';
 
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 export class GetCustomersQueryDto {
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
@@ -29,7 +30,7 @@ export class GetCustomersQueryDto {
   @ApiPropertyOptional({ default: 'created_at' })
   @IsOptional()
   @IsString()
-  @IsIn(['created_at', 'full_name'])
+  @IsIn(['created_at', 'deleted_at', 'full_name'])
   orderBy?: string;
 
   @ApiPropertyOptional({ default: 'desc' })
@@ -44,6 +45,27 @@ export class GetCustomersQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'List soft-deleted customers when true (query sends "true"/"false").',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return false;
+    }
+    if (value === true || value === 'true') {
+      return true;
+    }
+    if (value === false || value === 'false') {
+      return false;
+    }
+    return false;
+  })
+  @IsBoolean()
+  deleted?: boolean;
 }
 
 export class CreateCustomerDto {

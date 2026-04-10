@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   Logger,
   Param,
   Post,
@@ -104,18 +103,42 @@ export class CustomersController {
     return { data: customer };
   }
 
-  @Delete('/bulk')
+  @Post('/restore')
   @RequirePermissions('customers:delete')
-  @HttpCode(204)
-  async delete(
+  async restore(
     @HotelUuid() hotelUuid: string,
     @Body() body: DeleteCustomersDto,
   ) {
-    for (const customerUuid of body.customer_uuids) {
-      await this.customersService.delete({
-        hotelUuid,
-        customerUuid,
-      });
-    }
+    const { count } = await this.customersService.restore({
+      hotelUuid,
+      customerUuids: body.customer_uuids,
+    });
+    return { data: { count } };
+  }
+
+  @Delete('/soft')
+  @RequirePermissions('customers:delete')
+  async softDelete(
+    @HotelUuid() hotelUuid: string,
+    @Body() body: DeleteCustomersDto,
+  ) {
+    const { count } = await this.customersService.softDelete({
+      hotelUuid,
+      customerUuids: body.customer_uuids,
+    });
+    return { data: { count } };
+  }
+
+  @Delete('/permanent')
+  @RequirePermissions('customers:delete')
+  async permanentDelete(
+    @HotelUuid() hotelUuid: string,
+    @Body() body: DeleteCustomersDto,
+  ) {
+    const { count } = await this.customersService.permanentDelete({
+      hotelUuid,
+      customerUuids: body.customer_uuids,
+    });
+    return { data: { count } };
   }
 }

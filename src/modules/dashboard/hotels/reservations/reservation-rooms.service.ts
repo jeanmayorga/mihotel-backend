@@ -236,15 +236,15 @@ export class ReservationRoomsService {
     const created = await this.prisma.hotels_reservations_rooms_v2.create({
       data: {
         reservation_uuid: reservationUuid,
-        room_uuid: dto.room_uuid,
+        room_uuid: dto.room_uuid ?? '',
         check_in_date: dto.check_in_date,
         check_out_date: dto.check_out_date,
         adults_count: dto.adults_count,
         children_count: dto.children_count,
         babies_count: dto.babies_count,
-        price_per_night: dto.price_per_night,
-        number_of_nights: dto.number_of_nights,
-        total_price: dto.total_price,
+        price_per_night: dto.price_per_night ?? 0,
+        number_of_nights: dto.number_of_nights ?? 0,
+        total_price: dto.total_price ?? 0,
       },
     });
 

@@ -229,8 +229,9 @@ export class CreateReservationRoomDto {
   @ApiPropertyOptional({
     example: 'b7b6f4f5-3ec0-4a11-a6fd-4fd09ab0f8f7',
   })
+  @IsOptional()
   @IsUUID()
-  room_uuid: string;
+  room_uuid?: string;
 
   @ApiPropertyOptional({
     example: 1,
@@ -254,18 +255,21 @@ export class CreateReservationRoomDto {
   @ApiPropertyOptional({
     example: 1,
   })
+  @IsOptional()
   @IsNumber()
   price_per_night: number;
 
   @ApiPropertyOptional({
     example: 1,
   })
+  @IsOptional()
   @IsNumber()
   number_of_nights: number;
 
   @ApiPropertyOptional({
     example: 1,
   })
+  @IsOptional()
   @IsNumber()
   total_price: number;
 }
